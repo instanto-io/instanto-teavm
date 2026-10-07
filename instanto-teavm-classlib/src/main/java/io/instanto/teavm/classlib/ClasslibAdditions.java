@@ -14,10 +14,17 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
+import org.teavm.model.emit.ValueEmitter;
 
-/** Adds the missing class-library methods by delegating to plain Java helpers. */
+/**
+ * Adds the missing class-library methods, and replaces the bodies of faulty ones, by delegating to
+ * plain Java helpers.
+ */
 final class ClasslibAdditions implements ClassHolderTransformer {
   private static final ValueType STREAM = ValueType.object("java.util.stream.Stream");
+  private static final ValueType CHARS = ValueType.arrayOf(ValueType.CHARACTER);
+  private static final ValueType INT = ValueType.INTEGER;
+  private static final ValueType CHAR_SEQUENCE = ValueType.object("java.lang.CharSequence");
 
   @Override
   public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
@@ -26,6 +33,9 @@ final class ClasslibAdditions implements ClassHolderTransformer {
       case "java.lang.Character" -> {
         addDirectionality(cls, context, ValueType.CHARACTER);
         addDirectionality(cls, context, ValueType.INTEGER);
+        delegate(cls, context, "codePointCount", "count", CHARS, INT, INT, INT);
+        delegate(cls, context, "offsetByCodePoints", "offset", CHAR_SEQUENCE, INT, INT, INT);
+        delegate(cls, context, "offsetByCodePoints", "offset", CHARS, INT, INT, INT, INT, INT);
       }
       default -> {}
     }
@@ -60,5 +70,26 @@ final class ClasslibAdditions implements ClassHolderTransformer {
     emit.invoke(Directionality.class.getName(), "of", ValueType.BYTE, emit.var(1, parameter))
         .returnValue();
     cls.addMethod(method);
+  }
+
+  /**
+   * Replaces the body of the static {@code name(parameters...)}, whose last type is the result, with
+   * a call to {@code CodePoints.helper} taking the same arguments. Absent methods are left alone.
+   */
+  private static void delegate(
+      ClassHolder cls,
+      ClassHolderTransformerContext context,
+      String name,
+      String helper,
+      ValueType... signature) {
+    MethodHolder method = cls.getMethod(new MethodDescriptor(name, signature));
+    if (method == null || !method.hasModifier(ElementModifier.STATIC)) return;
+    ValueType result = signature[signature.length - 1];
+    ProgramEmitter emit = ProgramEmitter.create(method, context.getHierarchy());
+    ValueEmitter[] arguments = new ValueEmitter[signature.length - 1];
+    for (int index = 0; index < arguments.length; index++) {
+      arguments[index] = emit.var(index + 1, signature[index]);
+    }
+    emit.invoke(CodePoints.class.getName(), helper, result, arguments).returnValue();
   }
 }

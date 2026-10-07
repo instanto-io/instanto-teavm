@@ -6,7 +6,7 @@ dependency and no custom compiler launcher.
 
 | Module | Purpose |
 | --- | --- |
-| `instanto-teavm-classlib` | Class-library methods TeaVM lacks, `String.lines()` and `Character.getDirectionality`, added while compiling. |
+| `instanto-teavm-classlib` | Class-library methods TeaVM lacks (`String.lines()`, `Character.getDirectionality`) and corrected code-point counting and movement in `Character`, applied while compiling. |
 | `instanto-teavm-extensions` | JUnit rule support, the temporary TeaVM lifecycle fix, and opt-in ThreadLocal checks. JVM and compiled browser tests live in this module. |
 | `instanto-teavm-core-patch` | Optional TeaVM 0.16.0 compiler patch for class initialization on exception paths. No Sarto or JUnit runtime dependency. |
 
@@ -317,7 +317,14 @@ exports, completion callbacks, and marker cleanup after an exception.
 of a module TeaVM compiles is enough; `instanto-teavm-pom` manages its version.
 It replaces no TeaVM class. It adds the missing methods to TeaVM's own
 `String` and `Character` during compilation and delegates them to plain Java
-helpers, and each addition steps aside when TeaVM already has the method. Its
+helpers, and each addition steps aside when TeaVM already has the method.
+
+It also corrects three `Character` methods TeaVM 0.16 gets wrong, by replacing
+their bodies with JDK-equivalent ones: `codePointCount(char[], int, int)` checks
+only the slice's first character for surrogate pairs, the array form of
+`offsetByCodePoints` ignores the slice's start, and the `CharSequence` form
+accepts an invalid index when there is nothing to move. The corrections always
+apply; the module's tests show when a TeaVM upgrade makes one redundant. Its
 tests also check that `Throwable`'s suppressed exceptions work after every
 constructor, which TeaVM 0.15 got wrong and 0.16 fixed.
 
