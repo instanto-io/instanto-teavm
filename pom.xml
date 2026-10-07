@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.instanto</groupId>
-    <artifactId>instanto-org-pom</artifactId>
+    <artifactId>instanto-teavm-pom</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <relativePath/>
   </parent>
@@ -13,7 +13,7 @@
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Instanto TeaVM</name>
-  <description>Shared TeaVM compiler configuration and optional compiler extensions.</description>
+  <description>TeaVM class-library additions, compiler extensions and the patched core, built on instanto-teavm-pom.</description>
   <scm>
     <url>https://github.com/instanto-io/instanto-teavm</url>
     <connection>scm:git:https://github.com/instanto-io/instanto-teavm.git</connection>
@@ -21,8 +21,8 @@
     <tag>HEAD</tag>
   </scm>
   <modules>
-    <module>instanto-teavm-pom</module>
     <module>instanto-teavm-core-patch</module>
+    <module>instanto-teavm-classlib</module>
     <module>instanto-teavm-extensions</module>
   </modules>
 </project>

@@ -8,18 +8,13 @@
     <artifactId>instanto-teavm-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>instanto-teavm-extensions</artifactId>
-  <name>Instanto TeaVM Extensions</name>
-  <description>TeaVM JUnit support, compatibility fixes and optional compiler checks.</description>
+  <artifactId>instanto-teavm-classlib</artifactId>
+  <name>Instanto TeaVM Class Library Additions</name>
+  <description>Class-library methods TeaVM lacks and fixes to the ones it has, applied while compiling.</description>
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-junit</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -29,13 +24,14 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-jso-apis</artifactId>
+      <artifactId>teavm-junit</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.13.2</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

@@ -19,10 +19,8 @@ jobs:
       maven-args: -Pteavm-browser-tests,teavm-class-init-fix -Dspotless.skip=true -Dinstanto.teavm.threadLocalChecks=true
     secrets: inherit
 
-  # Manual for now: instanto-poms still publishes instanto-teavm-pom, which every library
-  # inherits. Publish from here only once the parent's move (pending-consumers/README.md) is done.
   publish-snapshot:
-    if: github.repository == 'instanto-io/instanto-teavm' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    if: github.repository == 'instanto-io/instanto-teavm' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [verify]
     uses: instanto-io/instanto-poms/.github/workflows/maven-build.yml@main
     with:

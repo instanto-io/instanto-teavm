@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.instanto</groupId><artifactId>instanto-teavm-pom</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <relativePath>../../../../instanto-teavm-pom/pom.xml</relativePath>
+    <relativePath/>
   </parent>
   <groupId>io.instanto.fixture</groupId><artifactId>class-init-consumer</artifactId>
   <version>1.0-SNAPSHOT</version>

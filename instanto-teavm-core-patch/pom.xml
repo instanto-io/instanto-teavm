@@ -3,12 +3,17 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <!-- Not instanto-teavm-parent: instanto-teavm-pom's teavm-class-init-fix profile adds
+       this artifact as a dependency, which would make it depend on itself. It pins its
+       own TeaVM baseline and needs only the organisation's build conventions. -->
   <parent>
     <groupId>io.instanto</groupId>
-    <artifactId>instanto-teavm-parent</artifactId>
+    <artifactId>instanto-org-pom</artifactId>
     <version>0.1.0-SNAPSHOT</version>
+    <relativePath/>
   </parent>
   <artifactId>instanto-teavm-core-patch</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
   <name>Instanto TeaVM Core Patch</name>
   <description>TeaVM 0.16.0 core with exception-safe class initialization elimination.</description>
   <properties>

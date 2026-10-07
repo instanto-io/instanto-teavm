@@ -1,19 +1,20 @@
 # Instanto TeaVM
 
-Shared TeaVM compiler configuration and optional compiler extensions. Applications
+Class-library additions, compiler extensions and a patched compiler core for TeaVM. Applications
 continue to use TeaVM's standard Maven compiler goal. There is no Sarto runtime
 dependency and no custom compiler launcher.
 
 | Module | Purpose |
 | --- | --- |
-| `instanto-teavm-pom` | Manages TeaVM and extension versions, source-map defaults, compiler properties, and an optional browser-test profile. |
+| `instanto-teavm-classlib` | Class-library methods TeaVM lacks, `String.lines()` and `Character.getDirectionality`, added while compiling. |
 | `instanto-teavm-extensions` | JUnit rule support, the temporary TeaVM lifecycle fix, and opt-in ThreadLocal checks. JVM and compiled browser tests live in this module. |
 | `instanto-teavm-core-patch` | Optional TeaVM 0.16.0 compiler patch for class initialization on exception paths. No Sarto or JUnit runtime dependency. |
 
-The root `instanto-teavm-parent` builds these three modules and inherits Java build
-conventions from `instanto-org-pom`. The consumer coordinate remains
-`io.instanto:instanto-teavm-pom:0.1.0-SNAPSHOT`; this parent has moved from the
-`instanto-poms` repository.
+The root `instanto-teavm-parent` builds these three modules. It inherits
+`io.instanto:instanto-teavm-pom`, which lives in
+[instanto-poms](https://github.com/instanto-io/instanto-poms) with the other
+organisation POMs and manages the versions of the modules here. This repository
+holds code only, and its CI publishes every push to `main`.
 
 ## Compatibility first
 
@@ -30,7 +31,8 @@ behaviour change that all consumers must adopt.
 
 ## Compiler configuration
 
-An application can inherit `io.instanto:instanto-teavm-pom` directly or through
+The compiler configuration lives in `io.instanto:instanto-teavm-pom`, published
+from instanto-poms. An application can inherit it directly or through
 a Sarto parent. It declares the standard `org.teavm:teavm-maven-plugin` compile
 execution and chooses its main class, target, output path, module format and
 optimisation level. The shared parent manages the compiler version and enables
@@ -309,12 +311,25 @@ disabled, and with checks enabled. It requires byte-for-byte identical
 JavaScript in the first two builds, and tests ordinary main execution, native
 exports, completion callbacks, and marker cleanup after an exception.
 
-## Parent migration
+## Class-library additions
 
-Publish `instanto-org-pom` from `instanto-poms`, then this reactor, then consumers
-such as `sarto-poms`. Only this repository should publish `instanto-teavm-pom`.
-Consumers' existing parent coordinate stays the same. The root build parent is
-published with the consumer parent so Maven can resolve its inheritance chain.
+`instanto-teavm-classlib` registers a TeaVM plugin, so adding it as a dependency
+of a module TeaVM compiles is enough; `instanto-teavm-pom` manages its version.
+It replaces no TeaVM class. It adds the missing methods to TeaVM's own
+`String` and `Character` during compilation and delegates them to plain Java
+helpers, and each addition steps aside when TeaVM already has the method. Its
+tests also check that `Throwable`'s suppressed exceptions work after every
+constructor, which TeaVM 0.15 got wrong and 0.16 fixed.
+
+`Character.getDirectionality` derives the bidirectional class from the
+right-to-left script blocks and `Character.getType`, since TeaVM ships no bidi
+table. It matches the JDK for the strong classes, digits, separators and the
+embedding controls; other neutral characters are approximated by category.
+
+## Releases
+
+Publish `instanto-poms` first, then this repository, then consumers such as
+`sarto-poms`.
 
 
 The former `teavm-rule-support` repository now builds only a Maven relocation
