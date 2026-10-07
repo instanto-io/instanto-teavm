@@ -1,0 +1,28 @@
+diff --git a/examples/react-cloudflare-app/pom.xml b/examples/react-cloudflare-app/pom.xml
+index ac6eee1..456c5b9 100644
+--- a/examples/react-cloudflare-app/pom.xml
++++ b/examples/react-cloudflare-app/pom.xml
+@@ -120,8 +120,7 @@
+         <!-- Must precede teavm-junit on the test classpath. -->
+         <dependency>
+             <groupId>io.instanto</groupId>
+-            <artifactId>teavm-rule-support</artifactId>
+-            <version>${mockatcha.version}</version>
++            <artifactId>instanto-teavm-extensions</artifactId>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+diff --git a/sarto-edge-cf-junit-tests/pom.xml b/sarto-edge-cf-junit-tests/pom.xml
+index e0c93fb..5221cd9 100644
+--- a/sarto-edge-cf-junit-tests/pom.xml
++++ b/sarto-edge-cf-junit-tests/pom.xml
+@@ -16,8 +16,7 @@
+         <!-- Must precede teavm-junit, which arrives through sarto-edge-cf-junit. -->
+         <dependency>
+             <groupId>io.instanto</groupId>
+-            <artifactId>teavm-rule-support</artifactId>
+-            <version>${mockatcha.version}</version>
++            <artifactId>instanto-teavm-extensions</artifactId>
+             <scope>test</scope>
+         </dependency>
+         <dependency>

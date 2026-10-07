@@ -1,0 +1,497 @@
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index a2f3e5b..b5ec1ce 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -1,4 +1,4 @@
+-name: build
++name: Verify relocation
+ 
+ on:
+   push:
+@@ -12,28 +12,9 @@ permissions:
+ 
+ jobs:
+   verify:
+-    name: Verify (${{ matrix.browser_name }})
+-    strategy:
+-      fail-fast: false
+-      matrix:
+-        include:
+-          - browser_name: Chrome
+-            runner: browser-chrome
+-          - browser_name: Firefox
+-            runner: browser-firefox
+     uses: instanto-io/instanto-poms/.github/workflows/maven-build.yml@main
+     with:
+-      name: Verify in ${{ matrix.browser_name }}
+-      goals: clean test
+-      maven-args: -Drule.support.test.browser=${{ matrix.runner }}
+-    secrets: inherit
+-
+-  publish-snapshot:
+-    if: github.repository == 'instanto-io/teavm-rule-support' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+-    needs: [verify]
+-    uses: instanto-io/instanto-poms/.github/workflows/maven-build.yml@main
+-    with:
+-      name: Publish Maven snapshot
+-      goals: deploy
+-      maven-args: -DskipTests
++      name: Verify relocation POM
++      goals: clean verify
++      maven-args: -Dspotless.skip=true
+     secrets: inherit
+diff --git a/README.md b/README.md
+index f9d3fb6..5ca1a3e 100644
+--- a/README.md
++++ b/README.md
+@@ -1,206 +1,15 @@
+-# TeaVM JUnit rule support
++# TeaVM rule support has moved
+ 
+-`teavm-rule-support` adds JUnit 4 `@Rule` support to tests compiled and run
+-with TeaVM's `TeaVMTestRunner`.
++Implementation, tests and documentation now live in
++[`instanto-teavm`](../../instanto-teavm/README.md), in its
++`instanto-teavm-extensions` module.
+ 
+-Add the JAR to the classpath used to compile your TeaVM tests and the support is
+-installed automatically. Tests continue to use normal JUnit code. There is no
+-custom runner, base class, registration call, or generated source to add.
++Replace `io.instanto:teavm-rule-support` with
++`io.instanto:instanto-teavm-extensions:0.1.0-SNAPSHOT` and keep the dependency
++before `org.teavm:teavm-junit`. Do not include both artifacts.
+ 
+-```java
+-@RunWith(TeaVMTestRunner.class)
+-public class BrowserTest {
+-    @Rule
+-    public final TestRule resource = new BrowserResourceRule();
+-
+-    @Test
+-    public void usesTheResource() {
+-        // The rule is active here.
+-    }
+-}
+-```
+-
+-## What you get
+-
+-When the JAR is present on TeaVM's test compiler classpath:
+-
+-- instance fields and no-argument instance methods annotated with `@Rule` are
+-  applied to each test;
+-- both `TestRule` and `MethodRule` are supported;
+-- inherited rules and JUnit 4.13 rule ordering, including
+-  `@Rule(order = ...)`, are preserved;
+-- a `TestRule` receives a `Description` containing the test class and method;
+-- a `MethodRule` receives a real `FrameworkMethod`, including the test
+-  method's annotations; and
+-- incorrect classpath ordering is reported during TeaVM compilation instead of
+-  allowing tests to pass while silently ignoring their rules.
+-
+-Rules wrap TeaVM's existing per-test lifecycle:
+-
+-```text
+-rule setup
+-  @Before
+-    @Test
+-  @After
+-rule teardown
+-```
+-
+-Rule failures are reported as test failures. If the test body and `@After` both
+-fail, the `@After` failure is attached to the test failure as a suppressed
+-exception. The setup and teardown behavior of an individual rule remains
+-defined by the `Statement` returned by that rule, as it is on the JVM.
+-
+-Tests without `@Rule` members behave as before. Their generated rule hook
+-returns the original test statement unchanged.
+-
+-Without this module, `TeaVMTestRunner` still runs its normal `@Before`,
+-`@Test`, and `@After` methods, but JUnit `@Rule` members are not applied.
+-
+-## Rule kinds
+-
+-Both JUnit rule interfaces are supported, declared either as a field or as a
+-no-argument method.
+-
+-### TestRule
+-
+-A `TestRule` receives the statement and a `Description` naming the test class
+-and method, which suits a rule that sets something up and tears it down:
+-
+-```java
+-@Rule
+-public final TestRule resource = new ResourceRule();
+-```
+-
+-### MethodRule
+-
+-A `MethodRule` receives the statement, the `FrameworkMethod` and the test
+-instance. Use it when the rule needs the method itself rather than a
+-description of it: to read an annotation that carries behaviour, to reflect
+-over the method, or to evaluate the body more than once.
+-
+-```java
+-@Retention(RetentionPolicy.RUNTIME)
+-@Target(ElementType.METHOD)
+-@interface Retry {
+-    int times();
+-}
+-
+-static final class RetryRule implements MethodRule {
+-    @Override
+-    public Statement apply(Statement base, FrameworkMethod method, Object target) {
+-        return new Statement() {
+-            @Override
+-            public void evaluate() throws Throwable {
+-                Retry retry = method.getAnnotation(Retry.class);
+-                int required = retry == null ? 1 : retry.times();
+-                for (int attempt = 0; attempt < required; attempt++) {
+-                    base.evaluate();
+-                }
+-            }
+-        };
+-    }
+-}
+-```
+-
+-```java
+-@Rule
+-public final RetryRule retry = new RetryRule();
+-
+-@Test
+-@Retry(times = 3)
+-public void theBodyRunsThreeTimes() {
+-    // Evaluated once per attempt.
+-}
+-```
+-
+-The `FrameworkMethod` is a real one, so `method.getName()` and
+-`method.getAnnotation(...)` answer as they do on the JVM. That relies on the
+-test method being reflectable, which the bundled policy arranges; see
+-[Supported scope](#supported-scope) for where that selection ends.
+-
+-A `Description` cannot do this. It exposes the annotations, but a rule that
+-needs the method itself needs the `FrameworkMethod`.
+-
+-### Rules declared as methods
+-
+-A no-argument method annotated `@Rule` is applied like a field, and returns
+-either kind:
+-
+-```java
+-@Rule
+-public TestRule resource() {
+-    return new ResourceRule();
+-}
+-```
+-
+-### Ordering
+-
+-Rules on one class are ordered by `@Rule(order = ...)`. JUnit treats a higher
+-value as inner, so the lower value wraps the other, setting up first and tearing
+-down last:
+-
+-```java
+-@Rule(order = 0)
+-public final TestRule resource = new ResourceRule();
+-
+-@Rule(order = 1)
+-public final RetryRule retry = new RetryRule();
+-```
+-
+-Inherited rules are applied too, and a type implementing both interfaces is
+-applied once as a `TestRule`, matching JUnit 4.13.
+-
+-## Use it with TeaVM tests
+-
+-Add this library to the TeaVM test classpath before `teavm-junit`. Keep using
+-`TeaVMTestRunner` and ordinary JUnit `@Rule` members; no registration call is
+-needed. If TeaVM selects the original test entry point first, compilation
+-reports the classpath-order error rather than silently skipping rules.
+-
+-## What TeaVM discovers automatically
+-
+-The JAR registers a `TeaVMPlugin` and a reflection policy through Java service
+-provider files. TeaVM discovers both from the compiler classpath.
+-
+-During compilation the module:
+-
+-1. adds a rule hook to TeaVM's generated test entry point;
+-2. generates direct field reads and method calls for every rule, so rule
+-   discovery does not require run-time reflection;
+-3. retains the test-method reflection metadata needed by `MethodRule`; and
+-4. makes JUnit's `Description` usable with TeaVM.
+-
+-JUnit's `Description` normally creates a `ConcurrentLinkedQueue` for its
+-children. That implementation cannot be compiled by the targeted TeaVM
+-classlib. The plugin rewrites only this construction to use a small,
+-TeaVM-compatible collection. It does not replace `ConcurrentLinkedQueue`
+-elsewhere in the application and does not alter TeaVM's class library globally.
+-
+-The replacement uses snapshot iterators. If a TeaVM continuation resumes after
+-another continuation has added a description, an existing iteration remains
+-valid and does not throw `ConcurrentModificationException`. This is narrowly
+-scoped support for JUnit descriptions; it is not a general concurrent queue and
+-does not add threads or blocking behavior to TeaVM.
+-
+-## Supported scope
+-
+-This module supports JUnit 4 instance `@Rule` members used with
+-`TeaVMTestRunner`. It does not add `@ClassRule` support, provide general JUnit
+-runner extensibility, or change normal JVM test execution.
+-
+-Rule member types must be assignable to `TestRule` or `MethodRule` at compile
+-time. Rule methods must take no arguments. A type implementing both interfaces
+-is applied once as a `TestRule`, matching JUnit 4.13.
+-
+-`MethodRule` needs the target test method to be reflectable. The bundled policy
+-covers JUnit `@Test` methods on `@RunWith` classes. If a custom test
+-arrangement falls outside that selection, rule execution fails explicitly when
+-the method cannot be resolved.
+-
+-## Compatibility
+-
+-The current implementation targets TeaVM 0.15.0 and JUnit 4.13.2. It relies on
+-TeaVM test-runner internals and the shape of JUnit's `Description` constructor,
+-so upgrades to either dependency should be tested before adoption. A known
+-`Description` incompatibility fails during TeaVM compilation rather than later
+-in the browser.
++This repository builds only a Maven relocation POM. Its source tree is retained
++as migration history and is no longer compiled or tested here. Publish the new
++extensions artifact before publishing this relocation. The combined artifact
++includes JUnit rule support, the temporary lifecycle backport and opt-in
++ThreadLocal checks; checks remain disabled by default.
+diff --git a/pom.xml b/pom.xml
+index 620761e..b3a4283 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -3,163 +3,31 @@
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+-
+   <parent>
+     <groupId>io.instanto</groupId>
+     <artifactId>instanto-org-pom</artifactId>
+     <version>0.1.0-SNAPSHOT</version>
+     <relativePath/>
+   </parent>
+-
+-  <groupId>io.instanto</groupId>
+   <artifactId>teavm-rule-support</artifactId>
+   <version>0.1.0-SNAPSHOT</version>
+-  <packaging>jar</packaging>
+-
+-  <name>TeaVM rule support</name>
+-  <description>JUnit TestRule and MethodRule support for TeaVM's test runner.</description>
+-
+-  <licenses>
+-    <license>
+-      <name>Apache License, Version 2.0</name>
+-      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+-      <distribution>repo</distribution>
+-    </license>
+-  </licenses>
+-
+-  <scm>
+-    <url>https://github.com/instanto-io/teavm-rule-support</url>
+-    <connection>scm:git:https://github.com/instanto-io/teavm-rule-support.git</connection>
+-    <developerConnection>scm:git:ssh://git@github.com/instanto-io/teavm-rule-support.git</developerConnection>
+-    <tag>HEAD</tag>
+-  </scm>
+-
+-
+-  <!-- Bootstrap the published parent and consume Instanto snapshots by Maven coordinate. -->
++  <packaging>pom</packaging>
++  <name>TeaVM rule support relocation</name>
++  <description>Relocated to instanto-teavm-extensions.</description>
+   <repositories>
+     <repository>
+       <id>forgejo-instanto</id>
+-      <name>Instanto snapshots</name>
+       <url>https://packages.instanto.io/api/packages/instanto-io/maven</url>
+       <releases><enabled>false</enabled></releases>
+       <snapshots><enabled>true</enabled></snapshots>
+     </repository>
+   </repositories>
+-
+-  <properties>
+-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+-    <maven.compiler.release>21</maven.compiler.release>
+-    <teavm.version>0.15.0</teavm.version>
+-    <junit.version>4.13.2</junit.version>
+-    <!-- TeaVM's browser runner; these are real browser tests. -->
+-    <rule.support.test.browser>browser-chrome</rule.support.test.browser>
+-  </properties>
+-
+-  <!--
+-    Everything is provided: this module shadows classes from teavm-junit and is put on a test
+-    classpath ahead of it. It depends on no library of its own, which is what lets both a mocking
+-    library and a browser testkit consume it without either depending on the other.
+-  -->
+-  <dependencies>
+-    <dependency>
+-      <groupId>org.teavm</groupId>
+-      <artifactId>teavm-jso</artifactId>
+-      <version>${teavm.version}</version>
+-      <scope>provided</scope>
+-    </dependency>
+-    <dependency>
+-      <groupId>org.teavm</groupId>
+-      <artifactId>teavm-classlib</artifactId>
+-      <version>${teavm.version}</version>
+-      <scope>provided</scope>
+-    </dependency>
+-    <dependency>
+-      <groupId>org.teavm</groupId>
+-      <artifactId>teavm-junit</artifactId>
+-      <version>${teavm.version}</version>
+-      <scope>provided</scope>
+-    </dependency>
+-    <dependency>
+-      <groupId>org.teavm</groupId>
+-      <artifactId>teavm-core</artifactId>
+-      <version>${teavm.version}</version>
+-      <scope>provided</scope>
+-    </dependency>
+-    <dependency>
+-      <groupId>junit</groupId>
+-      <artifactId>junit</artifactId>
+-      <version>${junit.version}</version>
+-      <scope>provided</scope>
+-    </dependency>
+-  </dependencies>
+-
+-  <build>
+-    <plugins>
+-      <plugin>
+-        <groupId>org.apache.maven.plugins</groupId>
+-        <artifactId>maven-compiler-plugin</artifactId>
+-        <version>3.15.0</version>
+-        <configuration>
+-          <release>${maven.compiler.release}</release>
+-        </configuration>
+-      </plugin>
+-      <plugin>
+-        <groupId>org.apache.maven.plugins</groupId>
+-        <artifactId>maven-surefire-plugin</artifactId>
+-        <version>3.6.0-M1</version>
+-        <configuration>
+-          <systemPropertyVariables>
+-            <teavm.junit.target>${project.build.directory}/js-tests</teavm.junit.target>
+-            <teavm.junit.js.runner>${rule.support.test.browser}</teavm.junit.js.runner>
+-          </systemPropertyVariables>
+-        </configuration>
+-      </plugin>
+-      <plugin>
+-        <groupId>org.apache.maven.plugins</groupId>
+-        <artifactId>maven-javadoc-plugin</artifactId>
+-        <version>3.12.0</version>
+-        <configuration>
+-          <doclint>all,-missing</doclint>
+-        </configuration>
+-      </plugin>
+-    </plugins>
+-  </build>
+-
+-  <profiles>
+-    <profile>
+-      <id>release</id>
+-      <build>
+-        <plugins>
+-          <plugin>
+-            <groupId>org.apache.maven.plugins</groupId>
+-            <artifactId>maven-gpg-plugin</artifactId>
+-            <version>3.2.8</version>
+-            <configuration>
+-              <bestPractices>true</bestPractices>
+-            </configuration>
+-            <executions>
+-              <execution>
+-                <id>sign-release-files</id>
+-                <phase>verify</phase>
+-                <goals><goal>sign</goal></goals>
+-              </execution>
+-            </executions>
+-          </plugin>
+-          <plugin>
+-            <groupId>org.sonatype.central</groupId>
+-            <artifactId>central-publishing-maven-plugin</artifactId>
+-            <version>0.11.0</version>
+-            <extensions>true</extensions>
+-            <configuration>
+-              <publishingServerId>central</publishingServerId>
+-              <autoPublish>false</autoPublish>
+-              <waitUntil>validated</waitUntil>
+-              <checksums>all</checksums>
+-              <failOnBuildFailure>true</failOnBuildFailure>
+-            </configuration>
+-          </plugin>
+-        </plugins>
+-      </build>
+-    </profile>
+-  </profiles>
++  <distributionManagement>
++    <relocation>
++      <groupId>io.instanto</groupId>
++      <artifactId>instanto-teavm-extensions</artifactId>
++      <version>0.1.0-SNAPSHOT</version>
++      <message>JUnit rules and lifecycle fixes now live in instanto-teavm-extensions. Replace this dependency and keep it before teavm-junit.</message>
++    </relocation>
++  </distributionManagement>
+ </project>
+diff --git a/src/main/java/org/teavm/junit/TestEntryPointTransformer.java b/src/main/java/org/teavm/junit/TestEntryPointTransformer.java
+index 1003b09..586c93c 100644
+--- a/src/main/java/org/teavm/junit/TestEntryPointTransformer.java
++++ b/src/main/java/org/teavm/junit/TestEntryPointTransformer.java
+@@ -17,7 +17,9 @@ import static org.teavm.junit.TeaVMTestRunner.TESTNG_TEST;
+ 
+ import java.util.ArrayList;
+ import java.util.Collections;
++import java.util.HashSet;
+ import java.util.List;
++import java.util.Set;
+ import org.teavm.model.AnnotationReader;
+ import org.teavm.model.AnnotationValue;
+ import org.teavm.model.BasicBlock;
+@@ -30,6 +32,7 @@ import org.teavm.model.ClassReaderSource;
+ import org.teavm.model.ElementModifier;
+ import org.teavm.model.FieldHolder;
+ import org.teavm.model.FieldReader;
++import org.teavm.model.MethodDescriptor;
+ import org.teavm.model.MethodHolder;
+ import org.teavm.model.MethodReader;
+ import org.teavm.model.MethodReference;
+@@ -108,12 +111,15 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
+ 
+     List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
+     Collections.reverse(classes);
++    // Upstream 4cb1b19: an annotated override must run once, through virtual dispatch.
++    Set<MethodDescriptor> seen = new HashSet<>();
+     classes.stream()
+         .flatMap(cls -> cls.getMethods().stream())
+         .filter(
+             m ->
+                 m.getAnnotations().get(JUNIT4_BEFORE) != null
+                     || m.getAnnotations().get(TESTNG_BEFORE) != null)
++        .filter(m -> seen.add(m.getDescriptor()))
+         .forEach(
+             m ->
+                 testCaseVar
+@@ -128,12 +134,14 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
+     ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
+ 
+     List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
++    Set<MethodDescriptor> seen = new HashSet<>();
+     classes.stream()
+         .flatMap(cls -> cls.getMethods().stream())
+         .filter(
+             m ->
+                 m.getAnnotations().get(JUNIT4_AFTER) != null
+                     || m.getAnnotations().get(TESTNG_AFTER) != null)
++        .filter(m -> seen.add(m.getDescriptor()))
+         .forEach(
+             m ->
+                 testCaseVar

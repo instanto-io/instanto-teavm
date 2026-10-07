@@ -1,0 +1,184 @@
+diff --git a/core/src/main/java/org/teavm/model/optimization/ClassInitElimination.java b/core/src/main/java/org/teavm/model/optimization/ClassInitElimination.java
+index aa8642919..f34b60348 100644
+--- a/core/src/main/java/org/teavm/model/optimization/ClassInitElimination.java
++++ b/core/src/main/java/org/teavm/model/optimization/ClassInitElimination.java
+@@ -32,9 +32,11 @@ import org.teavm.model.util.ProgramUtils;
+ public class ClassInitElimination implements MethodOptimization {
+     @Override
+     public boolean optimize(MethodOptimizationContext context, Program program) {
+-        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
++        // Exception edges leave the entry node; only normal completion reaches the exit node.
++        // Facts learned in a block must not reach its handler or a catch/normal-flow join.
++        Graph cfg = ProgramUtils.buildControlFlowGraph2(program);
+         DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
+-        Graph domGraph = GraphUtils.buildDominatorGraph(dom, program.basicBlockCount());
++        Graph domGraph = GraphUtils.buildDominatorGraph(dom, cfg.size());
+ 
+         Step start = new Step(0);
+         Deque<Step> stack = new ArrayDeque<>();
+@@ -43,21 +45,24 @@ public class ClassInitElimination implements MethodOptimization {
+         while (!stack.isEmpty()) {
+             Step step = stack.pop();
+             int node = step.node;
+-            BasicBlock block = program.basicBlockAt(node);
++            // Even nodes represent block entry, odd nodes successful completion.
++            if (node % 2 != 0) {
++                BasicBlock block = program.basicBlockAt(node / 2);
+ 
+-            Instruction nextInsn;
+-            for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
+-                nextInsn = insn.getNext();
+-                if (insn instanceof InitClassInstruction) {
+-                    InitClassInstruction initClass = (InitClassInstruction) insn;
+-                    if (!step.initializedClasses.add(initClass.getClassName())) {
+-                        insn.delete();
++                Instruction nextInsn;
++                for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
++                    nextInsn = insn.getNext();
++                    if (insn instanceof InitClassInstruction) {
++                        InitClassInstruction initClass = (InitClassInstruction) insn;
++                        if (!step.initializedClasses.add(initClass.getClassName())) {
++                            insn.delete();
++                        }
++                        continue;
++                    }
++                    if (insn instanceof InvokeInstruction) {
++                        InvokeInstruction invoke = (InvokeInstruction) insn;
++                        step.initializedClasses.add(invoke.getMethod().getClassName());
+                     }
+-                    continue;
+-                }
+-                if (insn instanceof InvokeInstruction) {
+-                    InvokeInstruction invoke = (InvokeInstruction) insn;
+-                    step.initializedClasses.add(invoke.getMethod().getClassName());
+                 }
+             }
+ 
+diff --git a/core/src/main/java/org/teavm/model/transformation/ClassInitInsertion.java b/core/src/main/java/org/teavm/model/transformation/ClassInitInsertion.java
+index 11fc677f9..7e0914806 100644
+--- a/core/src/main/java/org/teavm/model/transformation/ClassInitInsertion.java
++++ b/core/src/main/java/org/teavm/model/transformation/ClassInitInsertion.java
+@@ -15,8 +15,13 @@
+  */
+ package org.teavm.model.transformation;
+ 
++import java.util.ArrayDeque;
++import java.util.Deque;
+ import java.util.HashSet;
+ import java.util.Set;
++import org.teavm.common.DominatorTree;
++import org.teavm.common.Graph;
++import org.teavm.common.GraphUtils;
+ import org.teavm.model.BasicBlock;
+ import org.teavm.model.ClassReader;
+ import org.teavm.model.ClassReaderSource;
+@@ -25,14 +30,13 @@ import org.teavm.model.Instruction;
+ import org.teavm.model.MethodDescriptor;
+ import org.teavm.model.MethodReader;
+ import org.teavm.model.Program;
++import org.teavm.model.TryCatchBlock;
+ import org.teavm.model.instructions.AbstractInstructionVisitor;
+ import org.teavm.model.instructions.GetFieldInstruction;
+ import org.teavm.model.instructions.InitClassInstruction;
+ import org.teavm.model.instructions.InvokeInstruction;
+ import org.teavm.model.instructions.PutFieldInstruction;
+-import org.teavm.model.util.DominatorWalker;
+-import org.teavm.model.util.DominatorWalkerCallback;
+-import org.teavm.model.util.DominatorWalkerContext;
++import org.teavm.model.util.ProgramUtils;
+ 
+ public class ClassInitInsertion {
+     private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
+@@ -51,12 +55,51 @@ public class ClassInitInsertion {
+             currentClass = method.getOwnerName();
+         }
+         Visitor visitor = new Visitor(currentClass);
+-        new DominatorWalker(program).walk(visitor);
++
++        // Exception edges leave a block's entry node; only normal completion reaches its exit node.
++        // Classes initialized in a protected block are therefore not assumed initialized where
++        // its handler rejoins normal flow, as they would be in a plain dominator tree walk.
++        Graph cfg = ProgramUtils.buildControlFlowGraph2(program);
++        DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
++        Graph domGraph = GraphUtils.buildDominatorGraph(dom, cfg.size());
++        boolean[] exceptionHandlers = new boolean[program.basicBlockCount()];
++        for (BasicBlock block : program.getBasicBlocks()) {
++            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
++                exceptionHandlers[tryCatch.getHandler().getIndex()] = true;
++            }
++        }
++
++        Deque<Step> stack = new ArrayDeque<>();
++        stack.push(new Step(0));
++        while (!stack.isEmpty()) {
++            Step step = stack.pop();
++            if (step.state != null) {
++                visitor.leave(step.state);
++                continue;
++            }
++            // Even nodes represent block entry, odd nodes successful completion.
++            BasicBlock block = program.basicBlockAt(step.node / 2);
++            step.state = step.node % 2 == 0
++                    ? visitor.enter(block, exceptionHandlers[block.getIndex()])
++                    : visitor.complete(block);
++            stack.push(step);
++            for (int successor : domGraph.outgoingEdges(step.node)) {
++                stack.push(new Step(successor));
++            }
++        }
++    }
++
++    static class Step {
++        final int node;
++        State state;
++
++        Step(int node) {
++            this.node = node;
++        }
+     }
+ 
+-    class Visitor extends AbstractInstructionVisitor implements DominatorWalkerCallback<State> {
++    class Visitor extends AbstractInstructionVisitor {
+         private String currentClass;
+-        private DominatorWalkerContext context;
+         Set<String> initializedClasses = new HashSet<>();
+         private State state;
+ 
+@@ -67,30 +110,26 @@ public class ClassInitInsertion {
+             }
+         }
+ 
+-        @Override
+-        public void setContext(DominatorWalkerContext context) {
+-            this.context = context;
+-        }
+-
+-        @Override
+-        public State visit(BasicBlock block) {
++        State enter(BasicBlock block, boolean exceptionHandler) {
+             state = new State();
+-            if (context.isExceptionHandler(block.getIndex())) {
++            if (exceptionHandler) {
+                 markAllClassesAsNotInitialized();
+                 if (currentClass != null) {
+                     markClassAsInitialized(currentClass);
+                 }
+             }
++            return state;
++        }
+ 
++        State complete(BasicBlock block) {
++            state = new State();
+             for (Instruction instruction : block) {
+                 instruction.acceptVisitor(this);
+             }
+-
+             return state;
+         }
+ 
+-        @Override
+-        public void endVisit(BasicBlock block, State state) {
++        void leave(State state) {
+             if (state.oldInitializedClasses != null) {
+                 initializedClasses.clear();
+                 initializedClasses.addAll(state.oldInitializedClasses);

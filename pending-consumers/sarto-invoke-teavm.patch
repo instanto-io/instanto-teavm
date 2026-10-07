@@ -1,0 +1,17 @@
+diff --git a/sarto/sarto-invoke-teavm/pom.xml b/sarto/sarto-invoke-teavm/pom.xml
+index 0865d25ea..c3f4a06be 100644
+--- a/sarto/sarto-invoke-teavm/pom.xml
++++ b/sarto/sarto-invoke-teavm/pom.xml
+@@ -24,6 +24,12 @@
+     </properties>
+ 
+     <dependencies>
++        <!-- Keep before teavm-junit: includes the rule-aware runner and lifecycle fix. -->
++        <dependency>
++            <groupId>io.instanto</groupId>
++            <artifactId>instanto-teavm-extensions</artifactId>
++            <scope>test</scope>
++        </dependency>
+         <dependency>
+             <groupId>io.instanto</groupId>
+             <artifactId>mockatcha-core</artifactId>

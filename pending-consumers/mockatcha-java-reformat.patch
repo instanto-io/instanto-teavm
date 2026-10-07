@@ -1,0 +1,902 @@
+diff --git a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/Bdd.java b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/Bdd.java
+index a0d0cfe..878dbb3 100644
+--- a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/Bdd.java
++++ b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/Bdd.java
+@@ -11,7 +11,6 @@ import java.util.Objects;
+ /** Method-name stubbing, call inspection, and a browser clock for Mockatcha tests. */
+ public final class Bdd {
+ 
+-
+   private Bdd() {}
+ 
+   /**
+diff --git a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/BddMatchers.java b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/BddMatchers.java
+index 2348aac..4be9bcf 100644
+--- a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/BddMatchers.java
++++ b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/BddMatchers.java
+@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
+  * Argument matchers for strings, collections, maps, and runtime types.
+  *
+  * <p>These follow the same rule as {@code ArgumentMatchers}: if one argument of a call uses a
+- * matcher, every argument must use one. To match an object by its properties, see
+- * {@link ObjectMatchers}.
++ * matcher, every argument must use one. To match an object by its properties, see {@link
++ * ObjectMatchers}.
+  */
+ public final class BddMatchers {
+ 
+@@ -43,12 +43,14 @@ public final class BddMatchers {
+         "stringMatching(\"" + regularExpression + "\")");
+   }
+ 
+-  /** Matches an array or collection containing all of these items, in any order. Extra items are allowed. */
++  /**
++   * Matches an array or collection containing all of these items, in any order. Extra items are
++   * allowed.
++   */
+   public static <T> T containing(Object... items) {
+     Object[] wanted = items.clone();
+     return argThat(
+-        argument -> containsAll(argument, wanted),
+-        "containing(" + Arrays.toString(wanted) + ")");
++        argument -> containsAll(argument, wanted), "containing(" + Arrays.toString(wanted) + ")");
+   }
+ 
+   /** Matches an array or collection holding exactly these items, in any order. */
+diff --git a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/CallLog.java b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/CallLog.java
+index b1a2562..373d603 100644
+--- a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/CallLog.java
++++ b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/CallLog.java
+@@ -68,7 +68,12 @@ public final class CallLog {
+   public Invocation at(int index) {
+     if (index < 0 || index >= invocations.size()) {
+       throw new IndexOutOfBoundsException(
+-          "Wanted call " + index + " of " + description + " but only " + invocations.size()
++          "Wanted call "
++              + index
++              + " of "
++              + description
++              + " but only "
++              + invocations.size()
+               + " were recorded");
+     }
+     return invocations.get(index);
+diff --git a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/ObjectMatchers.java b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/ObjectMatchers.java
+index 0328d6c..f65fa79 100644
+--- a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/ObjectMatchers.java
++++ b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/ObjectMatchers.java
+@@ -42,9 +42,9 @@ import org.teavm.metaprogramming.Value;
+  *         Map.of("employeeId", "A-17", "hours", 38)));
+  * }</pre>
+  *
+- * <p>The class must be a compile-time constant. A property is a no-argument accessor such as
+- * {@code hours()}, {@code getHours()}, or {@code isActive()}, or a visible field. Accessors and
+- * fields may be declared or inherited. An unknown property name fails when the matcher is built.
++ * <p>The class must be a compile-time constant. A property is a no-argument accessor such as {@code
++ * hours()}, {@code getHours()}, or {@code isActive()}, or a visible field. Accessors and fields may
++ * be declared or inherited. An unknown property name fails when the matcher is built.
+  */
+ @CompileTime
+ public final class ObjectMatchers {
+@@ -112,7 +112,8 @@ public final class ObjectMatchers {
+           .diagnostics()
+           .error(
+               currentLocation(),
+-              "objectContaining needs a class with readable properties, but " + type.name()
++              "objectContaining needs a class with readable properties, but "
++                  + type.name()
+                   + " is not one");
+       return null;
+     }
+@@ -123,7 +124,8 @@ public final class ObjectMatchers {
+           .diagnostics()
+           .error(
+               currentLocation(),
+-              "objectContaining found no readable property on " + type.name()
++              "objectContaining found no readable property on "
++                  + type.name()
+                   + ". A property is a visible no-argument accessor or field.");
+       return null;
+     }
+@@ -194,7 +196,9 @@ public final class ObjectMatchers {
+     exit(() -> array.get());
+   }
+ 
+-  /** Collects the readable properties of a type, an accessor winning over a field of the same name. */
++  /**
++   * Collects the readable properties of a type, an accessor winning over a field of the same name.
++   */
+   private static Map<String, Property> readablePropertiesOf(IntrospectClass<?> type) {
+     Map<String, Property> properties = new LinkedHashMap<>();
+     for (IntrospectMethod method : type.methods()) {
+diff --git a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/PropertyReader.java b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/PropertyReader.java
+index ff7cfd6..5d094bc 100644
+--- a/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/PropertyReader.java
++++ b/mockatcha-bdd/src/main/java/io/instanto/mockatcha/bdd/PropertyReader.java
+@@ -8,8 +8,8 @@ package io.instanto.mockatcha.bdd;
+ /**
+  * Reads a named property of one type, without reflection at runtime.
+  *
+- * <p>Generated while TeaVM compiles the test and obtained from
+- * {@link ObjectMatchers#propertiesOf(Class)}.
++ * <p>Generated while TeaVM compiles the test and obtained from {@link
++ * ObjectMatchers#propertiesOf(Class)}.
+  */
+ public interface PropertyReader<T> {
+ 
+diff --git a/mockatcha-bdd/src/test/java/io/instanto/mockatcha/bdd/BddSpyTeaVmTest.java b/mockatcha-bdd/src/test/java/io/instanto/mockatcha/bdd/BddSpyTeaVmTest.java
+index 0892e3d..b6e5a04 100644
+--- a/mockatcha-bdd/src/test/java/io/instanto/mockatcha/bdd/BddSpyTeaVmTest.java
++++ b/mockatcha-bdd/src/test/java/io/instanto/mockatcha/bdd/BddSpyTeaVmTest.java
+@@ -78,8 +78,7 @@ public class BddSpyTeaVmTest {
+     PricingService pricing = mock(PricingService.class);
+ 
+     assertThrows(
+-        IllegalArgumentException.class,
+-        () -> spyOn(pricing, "currency").andReturnValues());
++        IllegalArgumentException.class, () -> spyOn(pricing, "currency").andReturnValues());
+   }
+ 
+   @Test
+@@ -160,8 +159,7 @@ public class BddSpyTeaVmTest {
+     pricing.total("A-17");
+     pricing.total("A-18");
+ 
+-    assertEquals(
+-        List.of(List.of("A-17"), List.of("A-18")), calls(pricing, "total").allArgs());
++    assertEquals(List.of(List.of("A-17"), List.of("A-18")), calls(pricing, "total").allArgs());
+   }
+ 
+   @Test
+@@ -205,12 +203,10 @@ public class BddSpyTeaVmTest {
+   @Test
+   public void refusesAnObjectThatIsNotAMock() {
+     IllegalArgumentException failure =
+-        assertThrows(
+-            IllegalArgumentException.class, () -> spyOn(new PricingService(), "currency"));
++        assertThrows(IllegalArgumentException.class, () -> spyOn(new PricingService(), "currency"));
+ 
+     assertTrue(
+-        failure.getMessage(),
+-        failure.getMessage().contains("Mockatcha.mock or Mockatcha.spy"));
++        failure.getMessage(), failure.getMessage().contains("Mockatcha.mock or Mockatcha.spy"));
+   }
+ 
+   public static class PricingService {
+diff --git a/mockatcha-bdd/src/test/java/io/instanto/mockatcha/bdd/ObjectMatchersTeaVmTest.java b/mockatcha-bdd/src/test/java/io/instanto/mockatcha/bdd/ObjectMatchersTeaVmTest.java
+index 4f5a054..25a0f24 100644
+--- a/mockatcha-bdd/src/test/java/io/instanto/mockatcha/bdd/ObjectMatchersTeaVmTest.java
++++ b/mockatcha-bdd/src/test/java/io/instanto/mockatcha/bdd/ObjectMatchersTeaVmTest.java
+@@ -85,7 +85,8 @@ public class ObjectMatchersTeaVmTest {
+ 
+     verify(repository)
+         .saveOvertime(
+-            objectContaining(OvertimeTimesheet.class, Map.of("employeeId", "A-17", "overtime", 10)));
++            objectContaining(
++                OvertimeTimesheet.class, Map.of("employeeId", "A-17", "overtime", 10)));
+   }
+ 
+   @Test
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/AdditionalAnswers.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/AdditionalAnswers.java
+index 09ef4ce..f4621a8 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/AdditionalAnswers.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/AdditionalAnswers.java
+@@ -11,8 +11,7 @@ import java.util.List;
+ import java.util.Objects;
+ 
+ /**
+- * Answers built from the call being answered, for use with {@code thenAnswer} and
+- * {@code doAnswer}.
++ * Answers built from the call being answered, for use with {@code thenAnswer} and {@code doAnswer}.
+  *
+  * <pre>{@code
+  * when(store.save(any())).thenAnswer(returnsFirstArg());
+@@ -93,7 +92,11 @@ public final class AdditionalAnswers {
+   private static <T> T argumentAt(Invocation invocation, int index) {
+     if (index < 0 || index >= invocation.argumentCount()) {
+       throw new IllegalArgumentException(
+-          "Wanted argument " + index + " of " + invocation + " but it has "
++          "Wanted argument "
++              + index
++              + " of "
++              + invocation
++              + " but it has "
+               + invocation.argumentCount());
+     }
+     @SuppressWarnings("unchecked")
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/AdditionalMatchers.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/AdditionalMatchers.java
+index 16c1679..ab8b76c 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/AdditionalMatchers.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/AdditionalMatchers.java
+@@ -19,9 +19,9 @@ import java.util.regex.Pattern;
+  * verify(reader).read(aryEq(new byte[] {1, 2, 3}));
+  * }</pre>
+  *
+- * <p>Comparisons come in {@code int}, {@code long}, {@code double}, and {@link Comparable} forms.
+- * A {@code float}, {@code short}, or {@code byte} argument is served by the {@code int} or
+- * {@code double} form, which Java widens at the call site.
++ * <p>Comparisons come in {@code int}, {@code long}, {@code double}, and {@link Comparable} forms. A
++ * {@code float}, {@code short}, or {@code byte} argument is served by the {@code int} or {@code
++ * double} form, which Java widens at the call site.
+  */
+ public final class AdditionalMatchers {
+ 
+@@ -257,9 +257,7 @@ public final class AdditionalMatchers {
+     Objects.requireNonNull(regularExpression, "regularExpression");
+     Pattern pattern = Pattern.compile(regularExpression);
+     return ArgumentMatchers.argThat(
+-        argument ->
+-            argument instanceof String
+-                && pattern.matcher((String) argument).find(),
++        argument -> argument instanceof String && pattern.matcher((String) argument).find(),
+         "find(\"" + regularExpression + "\")");
+   }
+ 
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/ArgumentMatchers.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/ArgumentMatchers.java
+index 4363e80..41cddc5 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/ArgumentMatchers.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/ArgumentMatchers.java
+@@ -114,7 +114,9 @@ public final class ArgumentMatchers {
+         "endsWith(\"" + suffix + "\")");
+   }
+ 
+-  /** Matches an argument with a condition of your own, which is reported as {@code argThat(...)}. */
++  /**
++   * Matches an argument with a condition of your own, which is reported as {@code argThat(...)}.
++   */
+   public static <T> T argThat(ArgumentMatcher<T> matcher) {
+     return argThat(matcher, "argThat(...)");
+   }
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/Mockatcha.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/Mockatcha.java
+index ca6b8d8..e0cd0c7 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/Mockatcha.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/Mockatcha.java
+@@ -5,7 +5,6 @@
+  */
+ package io.instanto.mockatcha;
+ 
+-
+ import io.instanto.mockatcha.internal.CountingMode;
+ import io.instanto.mockatcha.internal.InOrderImpl;
+ import io.instanto.mockatcha.internal.LenientStubberImpl;
+@@ -73,9 +72,8 @@ public final class Mockatcha {
+   /**
+    * Opens a framework-neutral lifecycle that validates and releases its mocks.
+    *
+-   * <p>Intended for custom or non-JUnit harnesses. JUnit tests should normally use
+-   * {@link MockatchaRule}. Makes unused-stub checks on close without enabling fail-fast strict
+-   * stubbing.
++   * <p>Intended for custom or non-JUnit harnesses. JUnit tests should normally use {@link
++   * MockatchaRule}. Makes unused-stub checks on close without enabling fail-fast strict stubbing.
+    */
+   public static MockatchaSession session() {
+     return session(false);
+@@ -206,8 +204,8 @@ public final class Mockatcha {
+   /**
+    * Fails a call that found no arranged answer while the same method has one that did not match.
+    *
+-   * <p>Off by default. {@link MockatchaRule}, {@link StrictTest}, and a strict
+-   * {@link MockatchaSession} turn it on for their test lifecycle.
++   * <p>Off by default. {@link MockatchaRule}, {@link StrictTest}, and a strict {@link
++   * MockatchaSession} turn it on for their test lifecycle.
+    */
+   public static void strictStubs(boolean strict) {
+     MockRuntime.strictStubs(strict);
+@@ -229,8 +227,8 @@ public final class Mockatcha {
+   /**
+    * Fails when an argument matcher was created but never used by a call on a mock.
+    *
+-   * <p>Useful in an {@code @After} method, where it reports the mistake against the test that
+-   * made it rather than the next one to run.
++   * <p>Useful in an {@code @After} method, where it reports the mistake against the test that made
++   * it rather than the next one to run.
+    */
+   public static void validateUsage() {
+     MockRuntime.validateUsage();
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/MockatchaRule.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/MockatchaRule.java
+index 6b8e0fa..3c21ae1 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/MockatchaRule.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/MockatchaRule.java
+@@ -18,8 +18,8 @@ import org.junit.runners.model.Statement;
+  * }</pre>
+  *
+  * <p>The rule opens a {@link MockatchaSession}, enables strict stubbing, validates the session, and
+- * releases its mocks. TeaVM tests need the reusable {@code teavm-rule-support} module.
+- * {@link StrictTest} is the fallback when that support cannot be installed; do not use both.
++ * releases its mocks. TeaVM tests need the reusable {@code teavm-rule-support} module. {@link
++ * StrictTest} is the fallback when that support cannot be installed; do not use both.
+  */
+ public final class MockatchaRule implements TestRule {
+ 
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/StrictTest.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/StrictTest.java
+index d2bc6e8..ca741d8 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/StrictTest.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/StrictTest.java
+@@ -21,8 +21,8 @@ import org.junit.Before;
+  *
+  * <p>This is a Mockatcha fallback, not a TeaVM or JUnit API. Use it only when the runner cannot use
+  * Mockatcha's reusable TeaVM rule support. It opens the same {@link MockatchaSession} through
+- * inherited {@code @Before} and {@code @After} methods. Do not combine it with
+- * {@link MockatchaRule}.
++ * inherited {@code @Before} and {@code @After} methods. Do not combine it with {@link
++ * MockatchaRule}.
+  */
+ public abstract class StrictTest {
+ 
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/VerificationMode.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/VerificationMode.java
+index ea8b408..f37d326 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/VerificationMode.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/VerificationMode.java
+@@ -12,7 +12,9 @@ package io.instanto.mockatcha;
+  */
+ public interface VerificationMode {
+ 
+-  /** Checks the number of calls that matched, and throws an {@link AssertionError} if it is wrong. */
++  /**
++   * Checks the number of calls that matched, and throws an {@link AssertionError} if it is wrong.
++   */
+   void verify(int actualCount, String invocationDescription);
+ 
+   /** Checks a verified call with everything the runtime knows about it. */
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/CountingMode.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/CountingMode.java
+index 2c9f96b..65f5594 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/CountingMode.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/CountingMode.java
+@@ -11,8 +11,8 @@ import io.instanto.mockatcha.VerificationMode;
+ /**
+  * A verification mode expressed as a comparison against a count.
+  *
+- * <p>Ordered verification reads the kind and count back, because how many calls it consumes
+- * depends on how many were wanted.
++ * <p>Ordered verification reads the kind and count back, because how many calls it consumes depends
++ * on how many were wanted.
+  */
+ public final class CountingMode implements VerificationMode {
+ 
+@@ -89,15 +89,22 @@ public final class CountingMode implements VerificationMode {
+ 
+     if (kind == Kind.ONLY && context.totalCount() != 1) {
+       throw new AssertionError(
+-          "Wanted " + context.description() + " to be the only call on this mock, but "
+-              + (context.totalCount() - 1) + " other call(s) were recorded."
++          "Wanted "
++              + context.description()
++              + " to be the only call on this mock, but "
++              + (context.totalCount() - 1)
++              + " other call(s) were recorded."
+               + Failures.listOf(context.recorded()));
+     }
+   }
+ 
+   private static AssertionError failure(VerificationContext context, String wanted, int actual) {
+     return new AssertionError(
+-        wanted + context.description() + " but observed " + actual + "."
++        wanted
++            + context.description()
++            + " but observed "
++            + actual
++            + "."
+             + Failures.listOf(context.recorded()));
+   }
+ }
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/InOrderImpl.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/InOrderImpl.java
+index 7a64d9a..06fd748 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/InOrderImpl.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/InOrderImpl.java
+@@ -49,7 +49,9 @@ public final class InOrderImpl implements InOrder {
+     List<Invocation> remaining = unverified();
+     if (!remaining.isEmpty()) {
+       throw new AssertionError(
+-          "Wanted no further calls in this order, but observed " + remaining.get(0) + "."
++          "Wanted no further calls in this order, but observed "
++              + remaining.get(0)
++              + "."
+               + Failures.listOf(remaining));
+     }
+   }
+@@ -57,9 +59,9 @@ public final class InOrderImpl implements InOrder {
+   /**
+    * Counts the matching calls that follow everything already verified, then consumes them.
+    *
+-   * <p>An exact count first looks at the run of matching calls that starts next, which lets
+-   * {@code times(1)} succeed when a later call matches too. If that run is not the size wanted,
+-   * every matching call after the cursor is considered instead.
++   * <p>An exact count first looks at the run of matching calls that starts next, which lets {@code
++   * times(1)} succeed when a later call matches too. If that run is not the size wanted, every
++   * matching call after the cursor is considered instead.
+    */
+   void check(Object mock, InvocationPattern pattern, VerificationMode mode) {
+     List<Invocation> remaining = unverified();
+@@ -135,8 +137,7 @@ public final class InOrderImpl implements InOrder {
+     return run;
+   }
+ 
+-  private static boolean matches(
+-      Invocation invocation, Object mock, InvocationPattern pattern) {
++  private static boolean matches(Invocation invocation, Object mock, InvocationPattern pattern) {
+     return invocation.mock() == mock
+         && pattern.matches(invocation.method(), invocation.arguments().toArray());
+   }
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/MockRuntime.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/MockRuntime.java
+index c25a4d5..0d37639 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/MockRuntime.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/MockRuntime.java
+@@ -29,9 +29,9 @@ public final class MockRuntime {
+    * The mocks and the part-finished stubbing or verification belonging to one thread.
+    *
+    * <p>A test arranges a mock, calls it and checks it as one sequence, so this state belongs to
+-   * whoever is running that sequence. Held per thread, two tests running at once no longer read each
+-   * other's half-finished work. TeaVM runs tests on its main thread, where its ThreadLocal reads a
+-   * field rather than a map, so nothing here costs more there than a static field did.
++   * whoever is running that sequence. Held per thread, two tests running at once no longer read
++   * each other's half-finished work. TeaVM runs tests on its main thread, where its ThreadLocal
++   * reads a field rather than a map, so nothing here costs more there than a static field did.
+    */
+   private static final class Scope {
+     private final Map<Object, MockState> states = new IdentityHashMap<>();
+@@ -79,8 +79,8 @@ public final class MockRuntime {
+   /**
+    * Reports whether a generated method should hand this call to the real object.
+    *
+-   * <p>A mock has no delegate, so an unstubbed call on one is where strict scope().stubbing looks for a
+-   * stub that was meant for it.
++   * <p>A mock has no delegate, so an unstubbed call on one is where strict scope().stubbing looks
++   * for a stub that was meant for it.
+    */
+   public static boolean callsReal(
+       MockState state, String method, Object[] arguments, Object dispatchResult, Object delegate) {
+@@ -94,7 +94,9 @@ public final class MockRuntime {
+     return false;
+   }
+ 
+-  /** Turns on failing at the call when a stub for the same method was arranged but did not match. */
++  /**
++   * Turns on failing at the call when a stub for the same method was arranged but did not match.
++   */
+   public static void strictStubs(boolean strict) {
+     scope().strictStubs = strict;
+   }
+@@ -228,19 +230,20 @@ public final class MockRuntime {
+ 
+   @SuppressWarnings("unchecked")
+   public static void registerMatcher(ArgumentMatcher<?> matcher, String description) {
+-    scope().matchers.add(
+-        new RegisteredMatcher((ArgumentMatcher<Object>) matcher, description));
++    scope().matchers.add(new RegisteredMatcher((ArgumentMatcher<Object>) matcher, description));
+   }
+ 
+   /** Registers a matcher whose side effect is committed only after the whole invocation matches. */
+   @SuppressWarnings("unchecked")
+   public static void registerMatcher(
+       ArgumentMatcher<?> matcher, String description, Consumer<Object> onMatch) {
+-    scope().matchers.add(
+-        new RegisteredMatcher(
+-            (ArgumentMatcher<Object>) matcher,
+-            description,
+-            Objects.requireNonNull(onMatch, "onMatch")));
++    scope()
++        .matchers
++        .add(
++            new RegisteredMatcher(
++                (ArgumentMatcher<Object>) matcher,
++                description,
++                Objects.requireNonNull(onMatch, "onMatch")));
+   }
+ 
+   public static Object invokeObject(MockState state, String method, Object[] arguments) {
+@@ -257,7 +260,6 @@ public final class MockRuntime {
+     return dispatch(state, method, arguments);
+   }
+ 
+-
+   public static boolean toBoolean(Object result) {
+     return result != null && result != REAL_CALL && (Boolean) result;
+   }
+@@ -328,7 +330,8 @@ public final class MockRuntime {
+   public static void beginVerification(Object mock, VerificationMode mode) {
+     MockState state = requireState(mock);
+     requireNoPendingMatchers("verify()");
+-    scope().verification = new VerificationRequest(state, Objects.requireNonNull(mode, "mode"), null);
++    scope().verification =
++        new VerificationRequest(state, Objects.requireNonNull(mode, "mode"), null);
+     scope().lastInvocation = null;
+   }
+ 
+@@ -411,8 +414,7 @@ public final class MockRuntime {
+     StubbingRequest request = scope().stubbing;
+     scope().stubbing = null;
+     if (request.state != state) {
+-      throw new IllegalStateException(
+-          "The call after when(mock) must be made on the same mock");
++      throw new IllegalStateException("The call after when(mock) must be made on the same mock");
+     }
+     Stub stub = newStub(state, pattern);
+     for (Answer<?> answer : request.answers) {
+@@ -460,7 +462,11 @@ public final class MockRuntime {
+     List<RegisteredMatcher> pending = new ArrayList<>(scope().matchers);
+     scope().matchers.clear();
+     throw new IllegalStateException(
+-        operation + " found " + pending.size() + " argument matcher(s) left over: " + pending
++        operation
++            + " found "
++            + pending.size()
++            + " argument matcher(s) left over: "
++            + pending
+             + ". A matcher belongs inside a call on a mock, as in verify(mock).save(any()).");
+   }
+ 
+@@ -475,8 +481,10 @@ public final class MockRuntime {
+       List<Invocation> remaining = requireState(mock).unverified();
+       if (!remaining.isEmpty()) {
+         throw new AssertionError(
+-            stateDescription(mock) + ": wanted no further calls, but observed "
+-                + remaining.get(0) + "."
++            stateDescription(mock)
++                + ": wanted no further calls, but observed "
++                + remaining.get(0)
++                + "."
+                 + Failures.listOf(requireState(mock).invocations()));
+       }
+     }
+@@ -488,8 +496,10 @@ public final class MockRuntime {
+       List<Invocation> recorded = requireState(mock).invocations();
+       if (!recorded.isEmpty()) {
+         throw new AssertionError(
+-            stateDescription(mock) + ": wanted no calls at all, but observed "
+-                + recorded.get(0) + "."
++            stateDescription(mock)
++                + ": wanted no calls at all, but observed "
++                + recorded.get(0)
++                + "."
+                 + Failures.listOf(recorded));
+       }
+     }
+@@ -499,7 +509,8 @@ public final class MockRuntime {
+   public static void validateUsage() {
+     List<String> unfinished = new ArrayList<>();
+     if (!scope().matchers.isEmpty()) {
+-      unfinished.add(scope().matchers.size() + " argument matcher(s) left over: " + scope().matchers);
++      unfinished.add(
++          scope().matchers.size() + " argument matcher(s) left over: " + scope().matchers);
+     }
+     if (scope().verification != null) {
+       unfinished.add("verify(mock) was not followed by a method call");
+@@ -519,7 +530,8 @@ public final class MockRuntime {
+ 
+     if (!unfinished.isEmpty()) {
+       throw new IllegalStateException(
+-          "validateUsage() found unfinished Mockatcha operations: " + unfinished
++          "validateUsage() found unfinished Mockatcha operations: "
++              + unfinished
+               + ". Complete each operation in the test where it begins.");
+     }
+   }
+@@ -565,7 +577,8 @@ public final class MockRuntime {
+ 
+     if (report.length() > 0) {
+       throw new AssertionError(
+-          "These stubs were arranged but never used:" + report
++          "These stubs were arranged but never used:"
++              + report
+               + "\nRemove them, correct their arguments, or arrange them with lenient().");
+     }
+   }
+@@ -676,8 +689,7 @@ public final class MockRuntime {
+     private final Invocation invocation;
+     private final InvocationPattern pattern;
+ 
+-    private LastInvocation(
+-        MockState state, Invocation invocation, InvocationPattern pattern) {
++    private LastInvocation(MockState state, Invocation invocation, InvocationPattern pattern) {
+       this.state = state;
+       this.invocation = invocation;
+       this.pattern = pattern;
+diff --git a/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/RegisteredMatcher.java b/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/RegisteredMatcher.java
+index 088a1b6..14ed72c 100644
+--- a/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/RegisteredMatcher.java
++++ b/mockatcha-core/src/main/java/io/instanto/mockatcha/internal/RegisteredMatcher.java
+@@ -19,8 +19,7 @@ public final class RegisteredMatcher {
+     this(matcher, description, argument -> {});
+   }
+ 
+-  RegisteredMatcher(
+-      ArgumentMatcher<Object> matcher, String description, Consumer<Object> onMatch) {
++  RegisteredMatcher(ArgumentMatcher<Object> matcher, String description, Consumer<Object> onMatch) {
+     this.matcher = matcher;
+     this.description = description;
+     this.onMatch = onMatch;
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/IdentityParityTeaVmTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/IdentityParityTeaVmTest.java
+index 4dce9eb..1a10590 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/IdentityParityTeaVmTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/IdentityParityTeaVmTest.java
+@@ -31,7 +31,8 @@ public class IdentityParityTeaVmTest extends MockatchaTestLifecycle {
+     AssertionError failure =
+         assertThrows(AssertionError.class, () -> verify(reports).combine("a", 1));
+ 
+-    assertTrue(failure.getMessage(), failure.getMessage().contains("combine(java.lang.String,int)"));
++    assertTrue(
++        failure.getMessage(), failure.getMessage().contains("combine(java.lang.String,int)"));
+   }
+ 
+   @Test
+@@ -41,6 +42,7 @@ public class IdentityParityTeaVmTest extends MockatchaTestLifecycle {
+     AssertionError failure =
+         assertThrows(AssertionError.class, () -> verify(reports).summarise(new String[] {"a"}));
+ 
+-    assertTrue(failure.getMessage(), failure.getMessage().contains("summarise([Ljava.lang.String;)"));
++    assertTrue(
++        failure.getMessage(), failure.getMessage().contains("summarise([Ljava.lang.String;)"));
+   }
+ }
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/InOrderTeaVmTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/InOrderTeaVmTest.java
+index 8c583cc..19e5d72 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/InOrderTeaVmTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/InOrderTeaVmTest.java
+@@ -14,12 +14,11 @@ import static io.instanto.mockatcha.Mockatcha.mock;
+ import static io.instanto.mockatcha.Mockatcha.never;
+ import static io.instanto.mockatcha.Mockatcha.only;
+ import static io.instanto.mockatcha.Mockatcha.times;
++import static org.junit.Assert.assertEquals;
+ import static org.junit.Assert.assertThrows;
+ import static org.junit.Assert.assertTrue;
+-import static org.junit.Assert.assertEquals;
+ 
+ import java.util.List;
+-
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.teavm.junit.TeaVMTestRunner;
+@@ -155,7 +154,8 @@ public class InOrderTeaVmTest extends MockatchaTestLifecycle {
+ 
+     InOrder order = inOrder(repository);
+     order.verify(repository, atLeast(2)).save("report");
+-    assertThrows(AssertionError.class, () -> order.verify(repository, atLeastOnce()).save("report"));
++    assertThrows(
++        AssertionError.class, () -> order.verify(repository, atLeastOnce()).save("report"));
+   }
+ 
+   @Test
+@@ -224,8 +224,7 @@ public class InOrderTeaVmTest extends MockatchaTestLifecycle {
+     Notifications notifications = mock(Notifications.class);
+     InOrder order = inOrder(repository);
+ 
+-    assertThrows(
+-        IllegalArgumentException.class, () -> order.verify(notifications).send("saved"));
++    assertThrows(IllegalArgumentException.class, () -> order.verify(notifications).send("saved"));
+   }
+ 
+   @Test
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/InteractionsAndMatchersTeaVmTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/InteractionsAndMatchersTeaVmTest.java
+index 1e01bf2..9d700e9 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/InteractionsAndMatchersTeaVmTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/InteractionsAndMatchersTeaVmTest.java
+@@ -22,8 +22,8 @@ import static io.instanto.mockatcha.ArgumentMatchers.eq;
+ import static io.instanto.mockatcha.ArgumentMatchers.nullable;
+ import static io.instanto.mockatcha.ArgumentMatchers.same;
+ import static io.instanto.mockatcha.ArgumentMatchers.startsWith;
+-import static io.instanto.mockatcha.Mockatcha.inOrder;
+ import static io.instanto.mockatcha.Mockatcha.doReturn;
++import static io.instanto.mockatcha.Mockatcha.inOrder;
+ import static io.instanto.mockatcha.Mockatcha.lenient;
+ import static io.instanto.mockatcha.Mockatcha.mock;
+ import static io.instanto.mockatcha.Mockatcha.times;
+@@ -284,7 +284,8 @@ public class InteractionsAndMatchersTeaVmTest extends MockatchaTestLifecycle {
+ 
+     verify(repository);
+ 
+-    IllegalStateException failure = assertThrows(IllegalStateException.class, Mockatcha::validateUsage);
++    IllegalStateException failure =
++        assertThrows(IllegalStateException.class, Mockatcha::validateUsage);
+     assertTrue(failure.getMessage(), failure.getMessage().contains("verify(mock)"));
+     validateUsage();
+   }
+@@ -295,7 +296,8 @@ public class InteractionsAndMatchersTeaVmTest extends MockatchaTestLifecycle {
+ 
+     doReturn("unused").when(repository);
+ 
+-    IllegalStateException failure = assertThrows(IllegalStateException.class, Mockatcha::validateUsage);
++    IllegalStateException failure =
++        assertThrows(IllegalStateException.class, Mockatcha::validateUsage);
+     assertTrue(failure.getMessage(), failure.getMessage().contains("when(mock)"));
+     validateUsage();
+   }
+@@ -304,7 +306,8 @@ public class InteractionsAndMatchersTeaVmTest extends MockatchaTestLifecycle {
+   public void reportsAndClearsUnfinishedLeniency() {
+     lenient();
+ 
+-    IllegalStateException failure = assertThrows(IllegalStateException.class, Mockatcha::validateUsage);
++    IllegalStateException failure =
++        assertThrows(IllegalStateException.class, Mockatcha::validateUsage);
+     assertTrue(failure.getMessage(), failure.getMessage().contains("lenient()"));
+     validateUsage();
+   }
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaClassTeaVmTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaClassTeaVmTest.java
+index 4b48759..620ab54 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaClassTeaVmTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaClassTeaVmTest.java
+@@ -5,7 +5,6 @@
+  */
+ package io.instanto.mockatcha;
+ 
+-import static io.instanto.mockatcha.ArgumentMatchers.anyInt;
+ import static io.instanto.mockatcha.ArgumentMatchers.anyString;
+ import static io.instanto.mockatcha.ArgumentMatchers.eq;
+ import static io.instanto.mockatcha.Mockatcha.clearInvocations;
+@@ -204,7 +203,8 @@ public class MockatchaClassTeaVmTest extends MockatchaTestLifecycle {
+     assertEquals(first, first);
+     assertNotEquals(first, second);
+     assertEquals(first.hashCode(), first.hashCode());
+-    assertEquals("Mockatcha mock of io.instanto.mockatcha.MockatchaClassTeaVmTest$PricingService",
++    assertEquals(
++        "Mockatcha mock of io.instanto.mockatcha.MockatchaClassTeaVmTest$PricingService",
+         first.toString());
+     assertEquals(0, mockingDetails(first).getInvocations().size());
+   }
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaRuleLifecycleTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaRuleLifecycleTest.java
+index 2a5bb98..c25ed74 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaRuleLifecycleTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaRuleLifecycleTest.java
+@@ -30,8 +30,7 @@ public class MockatchaRuleLifecycleTest {
+ 
+     Throwable observed =
+         assertThrows(
+-            Throwable.class,
+-            () -> new MockatchaRule().apply(body, Description.EMPTY).evaluate());
++            Throwable.class, () -> new MockatchaRule().apply(body, Description.EMPTY).evaluate());
+ 
+     assertSame(bodyFailure, observed);
+     assertEquals(1, observed.getSuppressed().length);
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaSpyTeaVmTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaSpyTeaVmTest.java
+index 00f1881..fbb87e5 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaSpyTeaVmTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaSpyTeaVmTest.java
+@@ -20,7 +20,6 @@ import static io.instanto.mockatcha.Mockatcha.verify;
+ import static io.instanto.mockatcha.Mockatcha.when;
+ import static org.junit.Assert.assertEquals;
+ import static org.junit.Assert.assertNotSame;
+-import static org.junit.Assert.assertNull;
+ import static org.junit.Assert.assertThrows;
+ import static org.junit.Assert.assertTrue;
+ 
+@@ -171,7 +170,8 @@ public class MockatchaSpyTeaVmTest extends MockatchaTestLifecycle {
+ 
+     assertNotSame(real, pricing);
+     assertTrue(pricing instanceof PricingService);
+-    assertEquals("Mockatcha spy of io.instanto.mockatcha.MockatchaSpyTeaVmTest$PricingService",
++    assertEquals(
++        "Mockatcha spy of io.instanto.mockatcha.MockatchaSpyTeaVmTest$PricingService",
+         pricing.toString());
+   }
+ 
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaTeaVmTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaTeaVmTest.java
+index 325e275..cd33065 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaTeaVmTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/MockatchaTeaVmTest.java
+@@ -45,8 +45,7 @@ public class MockatchaTeaVmTest extends MockatchaTestLifecycle {
+   public void supportsMatchersAnswersAndPrimitiveMethods() {
+     GreetingService greetings = mock(GreetingService.class);
+ 
+-    when(greetings.hello(anyString()))
+-        .thenAnswer(invocation -> "Hello " + invocation.argument(0));
++    when(greetings.hello(anyString())).thenAnswer(invocation -> "Hello " + invocation.argument(0));
+     when(greetings.add(anyInt(), eq(2))).thenReturn(42);
+ 
+     assertEquals("Hello TeaVM", greetings.hello("TeaVM"));
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/SessionsAndNamesTeaVmTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/SessionsAndNamesTeaVmTest.java
+index 3a664e8..ce8a76d 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/SessionsAndNamesTeaVmTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/SessionsAndNamesTeaVmTest.java
+@@ -47,8 +47,7 @@ public class SessionsAndNamesTeaVmTest {
+   public void aNamedMockAppearsInItsVerificationFailure() {
+     Store store = mock(Store.class, "timesheet store");
+ 
+-    AssertionError failure =
+-        assertThrows(AssertionError.class, () -> verify(store).find("A-17"));
++    AssertionError failure = assertThrows(AssertionError.class, () -> verify(store).find("A-17"));
+ 
+     assertTrue(failure.getMessage(), failure.getMessage().contains("timesheet store"));
+   }
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/StrictStubbingTeaVmTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/StrictStubbingTeaVmTest.java
+index 1140159..99100f8 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/StrictStubbingTeaVmTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/StrictStubbingTeaVmTest.java
+@@ -51,8 +51,7 @@ public class StrictStubbingTeaVmTest extends MockatchaTestLifecycle {
+     Store store = mock(Store.class);
+     when(store.find("A-17")).thenReturn("timesheet");
+ 
+-    AssertionError failure =
+-        assertThrows(AssertionError.class, () -> validateStubbing(store));
++    AssertionError failure = assertThrows(AssertionError.class, () -> validateStubbing(store));
+ 
+     assertTrue(failure.getMessage(), failure.getMessage().contains("never used"));
+     assertTrue(failure.getMessage(), failure.getMessage().contains("find"));
+@@ -65,8 +64,7 @@ public class StrictStubbingTeaVmTest extends MockatchaTestLifecycle {
+ 
+     store.find("A-18");
+ 
+-    AssertionError failure =
+-        assertThrows(AssertionError.class, () -> validateStubbing(store));
++    AssertionError failure = assertThrows(AssertionError.class, () -> validateStubbing(store));
+ 
+     assertTrue(failure.getMessage(), failure.getMessage().contains("called with"));
+     assertTrue(failure.getMessage(), failure.getMessage().contains("A-18"));
+@@ -79,8 +77,7 @@ public class StrictStubbingTeaVmTest extends MockatchaTestLifecycle {
+ 
+     store.audit("something else");
+ 
+-    AssertionError failure =
+-        assertThrows(AssertionError.class, () -> validateStubbing(store));
++    AssertionError failure = assertThrows(AssertionError.class, () -> validateStubbing(store));
+ 
+     assertTrue(failure.getMessage(), failure.getMessage().contains("never called"));
+   }
+diff --git a/mockatcha-core/src/test/java/io/instanto/mockatcha/teavm/SubclassGeneratorRulesTest.java b/mockatcha-core/src/test/java/io/instanto/mockatcha/teavm/SubclassGeneratorRulesTest.java
+index 108128b..53646a8 100644
+--- a/mockatcha-core/src/test/java/io/instanto/mockatcha/teavm/SubclassGeneratorRulesTest.java
++++ b/mockatcha-core/src/test/java/io/instanto/mockatcha/teavm/SubclassGeneratorRulesTest.java
+@@ -73,8 +73,7 @@ public class SubclassGeneratorRulesTest {
+   @Test
+   public void acceptsANestedClass() {
+     assertNull(
+-        SubclassGenerator.rejectionReason(
+-            describe("com.example.Pricing$Rates", Modifier.PUBLIC)));
++        SubclassGenerator.rejectionReason(describe("com.example.Pricing$Rates", Modifier.PUBLIC)));
+   }
+ 
+   @Test
+diff --git a/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/MockatchaRuleTeaVmTest.java b/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/MockatchaRuleTeaVmTest.java
+index 18580b7..f245027 100644
+--- a/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/MockatchaRuleTeaVmTest.java
++++ b/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/MockatchaRuleTeaVmTest.java
+@@ -27,8 +27,7 @@ import org.teavm.junit.TeaVMTestRunner;
+ @SkipJVM
+ public class MockatchaRuleTeaVmTest {
+ 
+-  @Rule
+-  public MockatchaRule mockatcha = new MockatchaRule();
++  @Rule public MockatchaRule mockatcha = new MockatchaRule();
+ 
+   @Test
+   public void theRuleTurnedOnStrictStubbing() {
+diff --git a/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/SparklineTest.java b/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/SparklineTest.java
+index 9f4c7ad..040ddc6 100644
+--- a/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/SparklineTest.java
++++ b/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/SparklineTest.java
+@@ -82,8 +82,7 @@ public class SparklineTest {
+   }
+ 
+   private static CanvasRenderingContext2D newCanvas() {
+-    HTMLCanvasElement element =
+-        (HTMLCanvasElement) HTMLDocument.current().createElement("canvas");
++    HTMLCanvasElement element = (HTMLCanvasElement) HTMLDocument.current().createElement("canvas");
+     element.setWidth(WIDTH);
+     element.setHeight(HEIGHT);
+     return (CanvasRenderingContext2D) element.getContext("2d");
+diff --git a/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/TimesheetRuleTest.java b/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/TimesheetRuleTest.java
+index 26424b3..9bc2472 100644
+--- a/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/TimesheetRuleTest.java
++++ b/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/TimesheetRuleTest.java
+@@ -23,8 +23,7 @@ import org.teavm.junit.TeaVMTestRunner;
+ @SkipJVM
+ public class TimesheetRuleTest {
+ 
+-  @Rule
+-  public MockatchaRule mockatcha = new MockatchaRule();
++  @Rule public MockatchaRule mockatcha = new MockatchaRule();
+ 
+   @Test
+   public void theRuleIsReallyRunning() {
+diff --git a/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/TimesheetServiceTest.java b/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/TimesheetServiceTest.java
+index ad91a41..ff07474 100644
+--- a/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/TimesheetServiceTest.java
++++ b/mockatcha-examples/src/test/java/io/instanto/mockatcha/examples/TimesheetServiceTest.java
+@@ -68,8 +68,7 @@ public class TimesheetServiceTest {
+     TimesheetRepository timesheets = mock(TimesheetRepository.class);
+     ApprovalGateway approvals = mock(ApprovalGateway.class);
+     when(timesheets.findDraft(anyString()))
+-        .thenAnswer(
+-            invocation -> new Timesheet((String) invocation.argument(0), 40));
++        .thenAnswer(invocation -> new Timesheet((String) invocation.argument(0), 40));
+ 
+     Submission result = new TimesheetService(timesheets, approvals).submit("B-24");
+ 

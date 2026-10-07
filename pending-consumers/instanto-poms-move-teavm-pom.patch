@@ -1,0 +1,215 @@
+diff --git a/README.md b/README.md
+index e1dacd3..2c6e1c4 100644
+--- a/README.md
++++ b/README.md
+@@ -1,28 +1,26 @@
+ # Instanto Maven parents
+ 
+-Shared Maven parents for Instanto libraries and applications. Choose the
+-organisation parent for a Java project or the TeaVM parent for a browser
+-project. Each parent POM describes its managed plugins and properties.
++The shared organisation parent for Instanto libraries and applications.
++TeaVM compiler configuration and extensions now live in the separate
++[`instanto-teavm`](https://github.com/instanto-io/instanto-teavm) repository.
+ 
+ | Parent | Role |
+ |---|---|
+ | `io.instanto:instanto-org-pom` | The build contract for every Instanto project: Java 21, pinned plugin versions, Spotless, SpotBugs, source and Javadoc archives, release profiles. |
+-| `io.instanto:instanto-teavm-pom` | Adds TeaVM for browser projects: one TeaVM version, managed dependencies, and source maps with the Java files needed to debug them. |
+ 
+ ## Use a parent
+ 
+-Set the project's Maven parent to `instanto-org-pom`, or to
+-`instanto-teavm-pom` for browser projects. Use the published version selected
+-for your project. The TeaVM parent adds managed TeaVM dependencies, the
+-compiler plugin and source-map defaults.
++Set the project's Maven parent to `instanto-org-pom`. For TeaVM projects, use
++`instanto-teavm-pom` from the new repository; its coordinate is unchanged and it
++continues to inherit this organisation parent. Publish this parent before
++building or publishing `instanto-teavm`.
+ 
+ A project that cannot change parent can import `instanto-teavm-pom` into
+ `dependencyManagement`. An import carries managed dependency versions only;
+ it does not carry the TeaVM property or plugin configuration.
+ 
+ Each child project supplies its own name and SCM address. See the
+-[parent POM](pom.xml) and [TeaVM parent](instanto-teavm-pom/pom.xml)
+-for the current settings.
++[parent POM](pom.xml) for the current organisation settings.
+ 
+ ## Shared CI
+ 
+diff --git a/instanto-teavm-pom/pom.xml b/instanto-teavm-pom/pom.xml
+deleted file mode 100644
+index b76dba1..0000000
+--- a/instanto-teavm-pom/pom.xml
++++ /dev/null
+@@ -1,150 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<project xmlns="http://maven.apache.org/POM/4.0.0"
+-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+-  <modelVersion>4.0.0</modelVersion>
+-
+-  <parent>
+-    <groupId>io.instanto</groupId>
+-    <artifactId>instanto-org-pom</artifactId>
+-    <version>0.1.0-SNAPSHOT</version>
+-    <relativePath>../pom.xml</relativePath>
+-  </parent>
+-
+-  <artifactId>instanto-teavm-pom</artifactId>
+-  <packaging>pom</packaging>
+-  <name>Instanto TeaVM Parent</name>
+-  <description>One TeaVM version, dependency set and plugin pin for Instanto projects that compile to the browser.</description>
+-
+-  <!-- ── Role ────────────────────────────────────────────────────────────
+-       The TeaVM layer for projects that compile Java to JavaScript or WebAssembly.
+-       It adds TeaVM and nothing else; everything an ordinary Instanto Java build
+-       needs still arrives from instanto-org-pom above it.
+-
+-       Provides  The teavm.version property; managed versions for every
+-                 org.teavm artifact the organisation uses, so a module can
+-                 declare them without a <version>; a pluginManagement pin for
+-                 teavm-maven-plugin, which also makes every TeaVM compile
+-                 write a source map and copy the Java sources it maps to.
+-       Requires  Source archives for the libraries an application compiles,
+-                 which instanto-org-pom attaches to every build.
+-       Not here  The rest of TeaVM build configuration. Targets, optimisation
+-                 level and output directory belong to each application parent,
+-                 which knows what it is producing.
+-
+-       A project that cannot change its parent may import this POM into
+-       dependencyManagement with <type>pom</type><scope>import</scope>. An
+-       import carries the managed versions only — not the property, and not
+-       the plugin pin or its source-map defaults.
+-  -->
+-
+-  <properties>
+-    <teavm.version>0.16.0</teavm.version>
+-  </properties>
+-
+-  <dependencyManagement>
+-    <dependencies>
+-      <!-- Portable runtime: compiled against by code that targets the browser. -->
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-classlib</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-jso</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-jso-apis</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-interop</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-
+-      <!-- Compiler and tooling: needed by code that drives a TeaVM build. -->
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-core</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-tooling</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-devserver</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-
+-      <!-- Metaprogramming and compiler extensions. These are compile-time only:
+-           declare them provided so they stay off a consumer's runtime classpath. -->
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-metaprogramming-api</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-extension-spi</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-extension-apis</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-extension-annotation-processor</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-relocated-libs-asm</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-
+-      <!-- Extras -->
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-extras-slf4j</artifactId>
+-        <version>${teavm.version}</version>
+-      </dependency>
+-
+-      <!-- Test -->
+-      <dependency>
+-        <groupId>org.teavm</groupId>
+-        <artifactId>teavm-junit</artifactId>
+-        <version>${teavm.version}</version>
+-        <scope>test</scope>
+-      </dependency>
+-    </dependencies>
+-  </dependencyManagement>
+-
+-  <build>
+-    <pluginManagement>
+-      <plugins>
+-        <!-- Every TeaVM application is debuggable in the browser as Java: the
+-             compiler writes a source map beside the script and copies the
+-             sources it names. Each application parent configures its own
+-             targets, optimisation level and output directory. -->
+-        <plugin>
+-          <groupId>org.teavm</groupId>
+-          <artifactId>teavm-maven-plugin</artifactId>
+-          <version>${teavm.version}</version>
+-          <configuration>
+-            <sourceMapsGenerated>true</sourceMapsGenerated>
+-            <sourceFilesCopied>true</sourceFilesCopied>
+-          </configuration>
+-        </plugin>
+-      </plugins>
+-    </pluginManagement>
+-  </build>
+-</project>
+diff --git a/pom.xml b/pom.xml
+index 4995377..d0cdb72 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -65,11 +65,8 @@
+     <tag>HEAD</tag>
+   </scm>
+ 
+-  <!-- Parents published from this repository. This POM stays platform-neutral;
+-       anything tied to a particular toolchain lives in a module beside it. -->
+-  <modules>
+-    <module>instanto-teavm-pom</module>
+-  </modules>
++  <!-- TeaVM configuration and extensions are published by instanto-teavm.
++       This repository publishes only the platform-neutral organisation parent. -->
+ 
+   <!-- Snapshots are published to, and resolved from, packages.instanto.io. The id
+        forgejo-instanto is the one Maven settings hold credentials under. -->

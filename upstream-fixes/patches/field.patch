@@ -1,0 +1,15 @@
+--- a/core/src/main/java/org/teavm/model/optimization/RepeatedFieldReadElimination.java
++++ b/core/src/main/java/org/teavm/model/optimization/RepeatedFieldReadElimination.java
+@@ -322,7 +322,11 @@
+         boolean[] exceptionHandlers = new boolean[program.basicBlockCount()];
+         for (BasicBlock block : program.getBasicBlocks()) {
+             for (TryCatchBlock tryCatchBlock : block.getTryCatchBlocks()) {
+-                exceptionHandlers[tryCatchBlock.getHandler().getIndex()] = true;
++                int handler = tryCatchBlock.getHandler().getIndex();
++                exceptionHandlers[handler] = true;
++                // An exception can skip reads and writes later in the protected block.
++                // Its exit cache is therefore unavailable at handler entry.
++                everythingInvalid[handler] = true;
+             }
+         }
+ 

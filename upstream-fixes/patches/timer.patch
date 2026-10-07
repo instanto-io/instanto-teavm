@@ -1,0 +1,181 @@
+--- a/jso/impl/src/main/java/org/teavm/jso/impl/JS.java
++++ b/jso/impl/src/main/java/org/teavm/jso/impl/JS.java
+@@ -781,6 +781,79 @@
+ 
+     @InjectedBy(JSNativeInjector.class)
+     @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4, JSObject a5);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4, JSObject a5, JSObject a6);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4, JSObject a5, JSObject a6, JSObject a7);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4, JSObject a5, JSObject a6, JSObject a7, JSObject a8);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4, JSObject a5, JSObject a6, JSObject a7, JSObject a8, JSObject a9);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4, JSObject a5, JSObject a6, JSObject a7, JSObject a8, JSObject a9, JSObject a10);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4, JSObject a5, JSObject a6, JSObject a7, JSObject a8, JSObject a9,
++            JSObject a10, JSObject a11);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject invokeGlobal(JSObject function, JSObject a0, JSObject a1, JSObject a2,
++            JSObject a3, JSObject a4, JSObject a5, JSObject a6, JSObject a7, JSObject a8, JSObject a9,
++            JSObject a10, JSObject a11, JSObject a12);
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
++    public static native JSObject applyGlobal(JSObject function, JSArray<?> args);
++
++
++    @InjectedBy(JSNativeInjector.class)
++    @PluggableDependency(JSNativeInjector.class)
+     @Import(name = "callMethod1", module = "teavmJso")
+     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a);
+ 
+--- a/jso/impl/src/main/java/org/teavm/jso/impl/JSClassProcessor.java
++++ b/jso/impl/src/main/java/org/teavm/jso/impl/JSClassProcessor.java
+@@ -88,6 +88,7 @@
+ import org.teavm.model.instructions.InvocationType;
+ import org.teavm.model.instructions.InvokeInstruction;
+ import org.teavm.model.instructions.IsInstanceInstruction;
++import org.teavm.model.instructions.NullConstantInstruction;
+ import org.teavm.model.instructions.PutElementInstruction;
+ import org.teavm.model.instructions.PutFieldInstruction;
+ import org.teavm.model.util.InstructionVariableMapper;
+@@ -1209,9 +1210,20 @@
+         newInvoke.setReceiver(result);
+ 
+         List<Variable> newArguments = new ArrayList<>();
+-        newArguments.add(getCallTarget(invoke));
+-        newArguments.add(marshaller.addStringWrap(marshaller.addString(name, invoke.getLocation()),
+-                invoke.getLocation()));
++        var target = getCallTarget(invoke);
++        var global = !wasmGC && isGlobalTarget(target);
++        if (global) {
++            target = marshaller.globalRef(name, invoke.getLocation());
++            var signature = newInvoke.getMethod().getDescriptor().getSignature();
++            signature = Arrays.copyOfRange(signature, 1, signature.length);
++            newInvoke.setMethod(new MethodReference(JS_CLASS,
++                    new MethodDescriptor(vararg ? "applyGlobal" : "invokeGlobal", signature)));
++        }
++        newArguments.add(target);
++        if (!global) {
++            newArguments.add(marshaller.addStringWrap(marshaller.addString(name, invoke.getLocation()),
++                    invoke.getLocation()));
++        }
+         newInvoke.setLocation(invoke.getLocation());
+ 
+         var callArguments = new ArrayList<Variable>();
+@@ -1270,6 +1282,16 @@
+         }
+ 
+         return true;
++    }
++
++    private boolean isGlobalTarget(Variable target) {
++        for (var instruction : replacement) {
++            if (instruction instanceof NullConstantInstruction
++                    && ((NullConstantInstruction) instruction).getReceiver() == target) {
++                return true;
++            }
++        }
++        return false;
+     }
+ 
+     private ClassReader getObjectClass() {
+--- a/jso/impl/src/main/java/org/teavm/jso/impl/JSNativeInjector.java
++++ b/jso/impl/src/main/java/org/teavm/jso/impl/JSNativeInjector.java
+@@ -81,20 +81,33 @@
+                 writer.ws().append('=').ws();
+                 context.writeExpr(context.getArgument(2), Precedence.ASSIGNMENT.next());
+                 break;
++            case "invokeGlobal":
+             case "invoke":
+-                if (isNull(context.getArgument(0))) {
++                if (methodRef.getName().equals("invokeGlobal")) {
++                    writer.append("(0,").ws();
++                    context.writeExpr(context.getArgument(0), Precedence.ASSIGNMENT);
++                    writer.append(')');
++                } else if (isNull(context.getArgument(0))) {
+                     writer.append(extractPropertyName(context.getArgument(1)));
+                 } else {
+                     context.writeExpr(context.getArgument(0), Precedence.GROUPING);
+                     renderProperty(context.getArgument(1), context);
+                 }
+                 writer.append('(');
+-                for (int i = 2; i < context.argumentCount(); ++i) {
+-                    if (i > 2) {
++                int firstArgument = methodRef.getName().equals("invokeGlobal") ? 1 : 2;
++                for (int i = firstArgument; i < context.argumentCount(); ++i) {
++                    if (i > firstArgument) {
+                         writer.append(',').ws();
+                     }
+                     context.writeExpr(context.getArgument(i), Precedence.min());
+                 }
++                writer.append(')');
++                break;
++            case "applyGlobal":
++                writer.append("(0,").ws();
++                context.writeExpr(context.getArgument(0), Precedence.ASSIGNMENT);
++                writer.append(")(...");
++                context.writeExpr(context.getArgument(1), Precedence.ASSIGNMENT);
+                 writer.append(')');
+                 break;
+             case "apply":
+@@ -393,6 +406,8 @@
+     @Override
+     public void methodReached(DependencyAgent agent, MethodDependency method) {
+         switch (method.getReference().getName()) {
++            case "invokeGlobal":
++            case "applyGlobal":
+             case "invoke":
+             case "construct":
+             case "function":

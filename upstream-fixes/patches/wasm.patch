@@ -1,0 +1,15 @@
+--- a/core/src/main/java/org/teavm/backend/wasm/generate/methods/WasmGCInstructionGenerationVisitor.java
++++ b/core/src/main/java/org/teavm/backend/wasm/generate/methods/WasmGCInstructionGenerationVisitor.java
+@@ -1054,8 +1054,10 @@
+             } else {
+                 var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
+                 var vtStruct = objectClass.getVirtualTableStructure();
+-                var srcValue = valueCache.create(sourceType, builder);
+-                var block = builder.block(context.functionTypes().of(null, sourceType).asBlock());
++                // Coroutine restore blocks cannot definitely initialize non-defaultable locals.
++                var cachedType = async ? sourceRef.asNullable() : sourceType;
++                var srcValue = valueCache.create(cachedType, builder);
++                var block = builder.block(context.functionTypes().of(null, cachedType).asBlock());
+                 block
+                         .nullBranch(WasmNullCondition.NULL, block)
+                         .structGet(objectClass.getStructure(), WasmGCClassInfoProvider.VT_FIELD_OFFSET)

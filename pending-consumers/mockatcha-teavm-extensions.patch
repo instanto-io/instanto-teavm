@@ -1,0 +1,127 @@
+diff --git a/README.md b/README.md
+index 307cbb5..e73a223 100644
+--- a/README.md
++++ b/README.md
+@@ -75,7 +75,7 @@ example, imports, TeaVM dependencies, and Surefire configuration.
+ | `mockatcha-examples` | [Executable examples](mockatcha-examples/README.md). |
+ 
+ [Webapp Testkit](https://github.com/instanto-io/webapp-testkit) provides DOM
+-queries and browser interactions; [TeaVM rule support](https://github.com/instanto-io/teavm-rule-support)
++queries and browser interactions; [TeaVM rule support](https://github.com/instanto-io/instanto-teavm)
+ applies JUnit rules in TeaVM tests. Both are separate libraries.
+ 
+ ## Documentation
+@@ -124,7 +124,7 @@ and clears mock state after the test:
+ public MockatchaRule mockatcha = new MockatchaRule();
+ ```
+ 
+-TeaVM tests need [TeaVM rule support](https://github.com/instanto-io/teavm-rule-support)
++TeaVM tests need [TeaVM rule support](https://github.com/instanto-io/instanto-teavm)
+ to run JUnit rules. If that is unavailable, extend `StrictTest` instead.
+ For other test harnesses, use `MockatchaSession`. On a JVM using named Java
+ modules, open the mocked class's package to Mockatcha or mock an interface;
+diff --git a/docs/README.md b/docs/README.md
+index 5df7f23..8460c8f 100644
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -22,7 +22,7 @@ standalone reference.
+ | [BDD helpers](../mockatcha-bdd/README.md) | Method-name stubbing, call logs and additional matchers. |
+ | [DOM testing](https://github.com/instanto-io/webapp-testkit) | Accessible queries, interactions, asynchronous rendering, assertions, and frames. |
+ | [Webapp testkit](https://github.com/instanto-io/webapp-testkit) | Testing applications built with any web stack through a TeaVM browser test. |
+-| JUnit rules for TeaVM (`io.instanto:teavm-rule-support`) | Running ordinary JUnit `TestRule` fields and methods through TeaVM. |
++| JUnit rules for TeaVM (`io.instanto:instanto-teavm-extensions`) | Running ordinary JUnit `TestRule` fields and methods through TeaVM. |
+ 
+ ## Examples
+ 
+diff --git a/docs/getting-started.md b/docs/getting-started.md
+index 0170711..e7d5b1e 100644
+--- a/docs/getting-started.md
++++ b/docs/getting-started.md
+@@ -82,7 +82,7 @@ as well:
+ </dependency>
+ ```
+ 
+-To use `@Rule` in a TeaVM test, add `io.instanto:teavm-rule-support` and declare
++To use `@Rule` in a TeaVM test, add `io.instanto:instanto-teavm-extensions` and declare
+ it before `teavm-junit`. Without it the runner still runs `@Before`, `@Test` and
+ `@After`, but ignores rules. See
+ [Strictness and lifecycle](strictness-and-lifecycle.md).
+diff --git a/docs/strictness-and-lifecycle.md b/docs/strictness-and-lifecycle.md
+index 4415d1c..27fc338 100644
+--- a/docs/strictness-and-lifecycle.md
++++ b/docs/strictness-and-lifecycle.md
+@@ -67,7 +67,7 @@ attaches lifecycle failures as suppressed exceptions. The test class remains
+ free to extend another class.
+ 
+ TeaVM's runner needs the reusable
+-separate [`io.instanto:teavm-rule-support`](https://github.com/instanto-io/teavm-rule-support) library to execute JUnit
++separate [`io.instanto:instanto-teavm-extensions`](https://github.com/instanto-io/instanto-teavm) library to execute JUnit
+ rules. Put it on the test classpath ahead of `teavm-junit`. The module is
+ independent of Mockatcha and supports ordinary `TestRule` use in other
+ TeaVM/JUnit projects.
+@@ -75,7 +75,7 @@ TeaVM/JUnit projects.
+ ## Use `StrictTest` as a compatibility fallback
+ 
+ `StrictTest` is a Mockatcha class, not a JUnit or TeaVM API. Use it when a
+-project cannot install `teavm-rule-support`, or when an older runner executes
++project cannot install `instanto-teavm-extensions`, or when an older runner executes
+ inherited `@Before` and `@After` methods but ignores JUnit rules:
+ 
+ ```java
+@@ -107,7 +107,7 @@ be reused by a later test. Sessions cannot be nested, including inside
+ 
+ | Test environment | Lifecycle |
+ | --- | --- |
+-| JUnit with `teavm-rule-support` | `MockatchaRule` |
++| JUnit with `instanto-teavm-extensions` | `MockatchaRule` |
+ | JUnit without rule support | `StrictTest` |
+ | Non-JUnit or custom harness | `MockatchaSession` in try-with-resources |
+ 
+diff --git a/mockatcha-bdd/pom.xml b/mockatcha-bdd/pom.xml
+index 5eb9154..c1bf341 100644
+--- a/mockatcha-bdd/pom.xml
++++ b/mockatcha-bdd/pom.xml
+@@ -15,6 +15,12 @@
+   <description>Spies, call inspection, matchers, and a fake clock for TeaVM tests, following Jasmine.</description>
+ 
+   <dependencies>
++        <!-- Keep before teavm-junit: includes the rule-aware runner and lifecycle fix. -->
++        <dependency>
++            <groupId>io.instanto</groupId>
++            <artifactId>instanto-teavm-extensions</artifactId>
++            <scope>test</scope>
++        </dependency>
+     <dependency>
+       <groupId>io.instanto</groupId>
+       <artifactId>mockatcha-core</artifactId>
+diff --git a/mockatcha-core/pom.xml b/mockatcha-core/pom.xml
+index 74ef6d6..940bd5e 100644
+--- a/mockatcha-core/pom.xml
++++ b/mockatcha-core/pom.xml
+@@ -15,6 +15,12 @@
+   <description>Mocking for TeaVM tests, following Mockito's API, generated ahead of time.</description>
+ 
+   <dependencies>
++        <!-- Keep before teavm-junit: includes the rule-aware runner and lifecycle fix. -->
++        <dependency>
++            <groupId>io.instanto</groupId>
++            <artifactId>instanto-teavm-extensions</artifactId>
++            <scope>test</scope>
++        </dependency>
+     <dependency>
+       <!-- Writes the subclass used to mock a class on the JVM; TeaVM generates its own. -->
+       <groupId>org.ow2.asm</groupId>
+diff --git a/mockatcha-examples/pom.xml b/mockatcha-examples/pom.xml
+index 5b8e786..a63ea0c 100644
+--- a/mockatcha-examples/pom.xml
++++ b/mockatcha-examples/pom.xml
+@@ -28,8 +28,7 @@
+     <!-- Declared before teavm-junit so its copies of the runner classes win on the classpath. -->
+     <dependency>
+       <groupId>io.instanto</groupId>
+-      <artifactId>teavm-rule-support</artifactId>
+-      <version>${teavm-rule-support.version}</version>
++      <artifactId>instanto-teavm-extensions</artifactId>
+       <scope>test</scope>
+     </dependency>
+     <!-- The sparkline example draws to a canvas, so the browser APIs are compiled in. -->

@@ -1,0 +1,42 @@
+diff --git a/verrai-demo/pom.xml b/verrai-demo/pom.xml
+index b4569c52..28c16c6c 100644
+--- a/verrai-demo/pom.xml
++++ b/verrai-demo/pom.xml
+@@ -208,8 +208,7 @@
+     <!-- Must precede teavm-junit on the test classpath. -->
+     <dependency>
+       <groupId>io.instanto</groupId>
+-      <artifactId>teavm-rule-support</artifactId>
+-      <version>${mockatcha.version}</version>
++      <artifactId>instanto-teavm-extensions</artifactId>
+       <scope>test</scope>
+     </dependency>
+     <dependency>
+diff --git a/verrai-ssr-cloudflare-integration-tests/pom.xml b/verrai-ssr-cloudflare-integration-tests/pom.xml
+index 80188811..79108de5 100644
+--- a/verrai-ssr-cloudflare-integration-tests/pom.xml
++++ b/verrai-ssr-cloudflare-integration-tests/pom.xml
+@@ -16,8 +16,7 @@
+     <!-- Must precede teavm-junit, which arrives through sarto-edge-cf-junit. -->
+     <dependency>
+       <groupId>io.instanto</groupId>
+-      <artifactId>teavm-rule-support</artifactId>
+-      <version>${mockatcha.version}</version>
++      <artifactId>instanto-teavm-extensions</artifactId>
+       <scope>test</scope>
+     </dependency>
+     <dependency>
+diff --git a/verrai-testkit-browser/pom.xml b/verrai-testkit-browser/pom.xml
+index 24e19b86..d4a67ab4 100644
+--- a/verrai-testkit-browser/pom.xml
++++ b/verrai-testkit-browser/pom.xml
+@@ -53,8 +53,7 @@
+     <!-- Declared before teavm-junit so JUnit rules run in TeaVM browser tests. -->
+     <dependency>
+       <groupId>io.instanto</groupId>
+-      <artifactId>teavm-rule-support</artifactId>
+-      <version>${mockatcha.version}</version>
++      <artifactId>instanto-teavm-extensions</artifactId>
+       <scope>test</scope>
+     </dependency>
+     <dependency>

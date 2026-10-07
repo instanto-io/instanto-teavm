@@ -1,0 +1,2 @@
+io.instanto.teavm.ThreadLocalChecksPlugin
+org.teavm.junit.RuleSupportPlugin

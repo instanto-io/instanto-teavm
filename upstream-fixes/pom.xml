@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <!-- Standalone proposal test fixture, prepared by verify.py outside the reactor. -->
+  <groupId>example</groupId>
+  <artifactId>teavm-proposed-fixes</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.deploy.skip>true</maven.deploy.skip>
+    <teavm.version>0.16.0</teavm.version>
+    <teavm.junit.js>true</teavm.junit.js>
+    <teavm.junit.wasm-gc>true</teavm.junit.wasm-gc>
+    <teavm.junit.optimized>true</teavm.junit.optimized>
+    <teavm.junit.minified>true</teavm.junit.minified>
+  </properties>
+  <dependencies>
+    <dependency><groupId>org.teavm</groupId><artifactId>teavm-jso-impl</artifactId><version>${teavm.version}</version><scope>test</scope></dependency>
+    <dependency>
+      <groupId>org.teavm</groupId><artifactId>teavm-classlib</artifactId><version>${teavm.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId><artifactId>teavm-jso-apis</artifactId><version>${teavm.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId><artifactId>teavm-junit</artifactId><version>${teavm.version}</version><scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId><artifactId>junit</artifactId><version>4.13.2</version><scope>test</scope>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.15.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.6.0-M1</version>
+        <configuration>
+          <systemPropertyVariables>
+            <teavm.junit.target>${project.build.directory}/teavm-tests</teavm.junit.target>
+            <teavm.junit.js>${teavm.junit.js}</teavm.junit.js>
+            <teavm.junit.wasm-gc>${teavm.junit.wasm-gc}</teavm.junit.wasm-gc>
+            <teavm.junit.c>false</teavm.junit.c>
+            <teavm.junit.optimized>${teavm.junit.optimized}</teavm.junit.optimized>
+            <teavm.junit.minified>${teavm.junit.minified}</teavm.junit.minified>
+            <teavm.junit.js.runner>browser-chrome</teavm.junit.js.runner>
+            <teavm.junit.wasm-gc.runner>browser-chrome</teavm.junit.wasm-gc.runner>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

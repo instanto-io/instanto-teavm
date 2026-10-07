@@ -1,0 +1,17 @@
+diff --git a/sarto-async-teavm-tests/pom.xml b/sarto-async-teavm-tests/pom.xml
+index e4878a1..073910a 100644
+--- a/sarto-async-teavm-tests/pom.xml
++++ b/sarto-async-teavm-tests/pom.xml
+@@ -11,6 +11,12 @@
+     <name>Sarto Async Continuation Tests</name>
+     <description>Browser-compiled tests for cooperative waiting and completion</description>
+     <dependencies>
++        <!-- Keep before teavm-junit: includes the rule-aware runner and lifecycle fix. -->
++        <dependency>
++            <groupId>io.instanto</groupId>
++            <artifactId>instanto-teavm-extensions</artifactId>
++            <scope>test</scope>
++        </dependency>
+         <dependency>
+             <groupId>io.instanto</groupId>
+             <artifactId>sarto-async-api</artifactId>

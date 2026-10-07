@@ -1,0 +1,21 @@
+diff --git a/README.md b/README.md
+index e5d25f5..ef092ad 100644
+--- a/README.md
++++ b/README.md
+@@ -22,8 +22,14 @@ instanto-org-pom                   Common Instanto build and release settings
+             └── sarto-app-tomcat-pom      Servlet container WAR
+ ```
+ 
+-`instanto-org-pom` and `instanto-teavm-pom` come from the standalone
+-[`instanto-poms`](https://github.com/instanto-io/instanto-poms) repository.
++`instanto-org-pom` comes from
++[`instanto-poms`](https://github.com/instanto-io/instanto-poms).
++`instanto-teavm-pom` and optional compiler extensions come from
++[`instanto-teavm`](https://github.com/instanto-io/instanto-teavm).
++The parent coordinates are unchanged. Shared compiler configuration is inherited
++through `sarto-org-pom`; application and service parents retain their entry
++points, Sarto-specific transformations, output layout and packaging. Optional
++ThreadLocal checks are not enabled by inheriting these parents.
+ 
+ ## Which parent
+ 
