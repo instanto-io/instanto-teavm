@@ -60,3 +60,21 @@ Disable the version-bound class-init profile before changing its compiler versio
 then run the compiler and browser regressions. Keep draft upstream proposals
 separate from packaged fixes until their full verification and consumer packaging
 are complete.
+
+## Migration pull requests
+
+| Repository | Review |
+| --- | --- |
+| instanto-teavm | [Pull request](https://github.com/instanto-io/instanto-teavm/pull/1) |
+| mockatcha | [Pull request](https://github.com/instanto-io/mockatcha/pull/2) |
+| verrai | [Pull request](https://github.com/instanto-io/verrai/pull/46) |
+| sarto-edge | [Pull request](https://github.com/instanto-io/sarto-edge/pull/42) |
+| sarto-async | [Pull request](https://github.com/instanto-io/sarto-async/pull/23) |
+| sarto | [Pull request](https://github.com/instanto-io/sarto/pull/394) |
+| cucumber-tea | [Pull request](https://github.com/instanto-io/cucumber-tea/pull/1) |
+| teavm-rule-support | [Pull request](https://github.com/instanto-io/teavm-rule-support/pull/1) |
+| teavm-compat | [Pull request](https://github.com/instanto-io/teavm-compat/pull/2) |
+
+These are draft PRs. Consumer adoption awaits shared artifact publication and
+successful checks in the relevant repository; queued or skipped jobs are not
+verification results.
