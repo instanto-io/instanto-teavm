@@ -42,10 +42,15 @@ This table describes scope; it does not claim all default branches have migrated
 
 The publication job on commit `c5498fd` failed with **401 Unauthorized** from
 `packages.instanto.io`; verification itself passed.
-The shared workflow reads `FORGEJO_PACKAGE_USER` and `FORGEJO_PACKAGE_TOKEN`
-from inherited repository/organisation secrets. The repository administrator
-must make the valid publishing credentials available to this private repository
-before snapshot deployment can succeed. Credentials are not stored in source.
+The shared reusable workflow expects `FORGEJO_PACKAGE_TOKEN` (singular),
+whereas the working sarto-async caller also accepts `FORGEJO_PACKAGES_TOKEN`
+(plural). This migration applies the same explicit mapping here: verification
+accepts the plural, read-only, or singular token; publication accepts the plural
+or singular publishing token. Both pass `FORGEJO_PACKAGE_USER`.
+The successful sarto-async publication on 8 October validates this convention.
+The earlier 401 does not establish that this repository lacks tokens.
+Validate the next deployment after adopting the mapping. Credentials are not
+stored in source.
 
 ## Upgrade and retirement
 
