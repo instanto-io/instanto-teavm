@@ -28,14 +28,12 @@ public final class Directionality {
       return Character.DIRECTIONALITY_ARABIC_NUMBER;
     }
     if (codePoint >= 0x06F0 && codePoint <= 0x06F9) return Character.DIRECTIONALITY_EUROPEAN_NUMBER;
-    if (isArabic(codePoint)) return Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC;
-    if (isRightToLeft(codePoint)) return Character.DIRECTIONALITY_RIGHT_TO_LEFT;
     switch (codePoint) {
       case 0x000A, 0x000D, 0x001C, 0x001D, 0x001E, 0x0085, 0x2029:
         return Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR;
       case 0x0009, 0x000B, 0x001F:
         return Character.DIRECTIONALITY_SEGMENT_SEPARATOR;
-      case 0x002C, 0x003A, 0x00A0, 0x202F, 0x2044, 0xFE50, 0xFE52, 0xFE55, 0xFF0C, 0xFF1A:
+      case 0x002C, 0x003A, 0x060C, 0x00A0, 0x202F, 0x2044, 0xFE50, 0xFE52, 0xFE55, 0xFF0C, 0xFF1A:
         return Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR;
       case 0x002B, 0x002D, 0x207A, 0x207B, 0x208A, 0x208B, 0x2212, 0xFB29, 0xFE62, 0xFE63, 0xFF0B,
           0xFF0D:
@@ -56,6 +54,9 @@ public final class Directionality {
       default:
         break;
     }
+    // Explicit bidi classes take precedence over the broad script approximation.
+    if (isArabic(codePoint)) return Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC;
+    if (isRightToLeft(codePoint)) return Character.DIRECTIONALITY_RIGHT_TO_LEFT;
     switch (Character.getType(codePoint)) {
       case Character.DECIMAL_DIGIT_NUMBER:
         return Character.DIRECTIONALITY_EUROPEAN_NUMBER;

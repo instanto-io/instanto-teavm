@@ -1,21 +1,12 @@
-# Waiting for instanto-teavm to be published
+# Historical consumer patches
 
-These changes make other repositories use `instanto-teavm-extensions` in place
-of `teavm-rule-support`. They were set
-aside on 6 October 2026, uncommitted, because `instanto-teavm` has no GitHub
-repository and is not on packages.instanto.io, so consumers built with them
-only on this machine.
+These patches were captured before this repository was available and its shared
+artifacts could be published. The migration is now prepared as changes in the
+consumer repositories; see [the migration guide](../docs/consumer-migration.md)
+and the associated pull requests for current status.
 
-Apply them once this repository is pushed and its CI has published its
-artifacts, each in its own repository, then verify against the registry.
-
-| File | Repository | Change |
-|---|---|---|
-| `sarto-async-teavm-tests.patch` | sarto-async | Browser tests use `instanto-teavm-extensions` |
-| `sarto-invoke-teavm.patch` | sarto (monorepo) | `sarto-invoke-teavm` tests use `instanto-teavm-extensions` |
-| `NativeCallbackTeaVmTest.java` | sarto (monorepo) | Goes in `sarto-invoke-teavm/src/test/java/io/instanto/sarto/invoke/teavm/`; needs the ThreadLocal checks |
-| `verrai-test-modules.patch` | verrai | Demo, SSR and browser testkit tests use `instanto-teavm-extensions` |
-| `sarto-edge-test-modules.patch` | sarto-edge | React example and CF JUnit tests use `instanto-teavm-extensions` |
-| `teavm-rule-support/` | teavm-rule-support | Turns it into a relocation POM to `instanto-teavm-extensions`, with the copied `TeaVMTestRunner` backport and its tests |
-| `mockatcha-teavm-extensions.patch` | mockatcha | Tests use `instanto-teavm-extensions`; README and docs point to it |
-| `mockatcha-java-reformat.patch` | mockatcha | Formatter rewrites found alongside the above; not part of the switch, kept only so nothing is lost |
+Do not apply these patches blindly: they refer to earlier revisions and omit
+later dependency and documentation changes. They are retained as reference.
+`mockatcha-java-reformat.patch` is unrelated formatting and is not part of the
+migration. Domain-specific native callback tests belong in Sarto's invocation
+tests, not the shared TeaVM runtime.

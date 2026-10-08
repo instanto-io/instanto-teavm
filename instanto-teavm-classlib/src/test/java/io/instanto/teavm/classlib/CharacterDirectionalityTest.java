@@ -46,6 +46,15 @@ public class CharacterDirectionalityTest {
   }
 
   @Test
+  public void explicitSeparatorsTakePrecedenceOverScriptBlocks() {
+    assertDirection(0x060C, Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR);
+    assertDirection(0x066A, Character.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR);
+    assertDirection(0xFB29, Character.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR);
+    assertEquals(Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR,
+        Character.getDirectionality('\u060C'));
+  }
+
+  @Test
   public void classifiesArabicDigits() {
     assertDirection(0x0660, Character.DIRECTIONALITY_ARABIC_NUMBER);
     assertDirection(0x06F5, Character.DIRECTIONALITY_EUROPEAN_NUMBER);
