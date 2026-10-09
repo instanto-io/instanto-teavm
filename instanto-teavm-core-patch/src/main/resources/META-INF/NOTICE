@@ -1,0 +1,9 @@
+Instanto TeaVM Core Patch
+
+Contains TeaVM core 0.16.0, copyright Alexey Andreev and TeaVM contributors,
+distributed under the Apache License, Version 2.0.
+Upstream: https://github.com/konsoletyper/teavm/tree/0.16.0
+
+ClassInitElimination.java is modified to use the existing split control-flow
+graph so exception paths do not inherit facts from normal block completion.
+All other upstream class files are included unchanged.

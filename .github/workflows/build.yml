@@ -1,0 +1,34 @@
+name: Verify TeaVM configuration and extensions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  verify:
+    uses: instanto-io/instanto-poms/.github/workflows/maven-build.yml@main
+    with:
+      name: Verify JVM, JavaScript and Wasm GC
+      goals: clean verify
+      maven-args: -Pteavm-browser-tests,teavm-class-init-fix -Dspotless.skip=true -Dinstanto.teavm.threadLocalChecks=true
+    secrets:
+      FORGEJO_PACKAGE_USER: ${{ secrets.FORGEJO_PACKAGE_USER }}
+      FORGEJO_PACKAGE_TOKEN: ${{ secrets.FORGEJO_PACKAGES_TOKEN || secrets.FORGEJO_PACKAGE_READ_TOKEN || secrets.FORGEJO_PACKAGE_TOKEN }}
+
+  publish-snapshot:
+    if: github.repository == 'instanto-io/instanto-teavm' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [verify]
+    uses: instanto-io/instanto-poms/.github/workflows/maven-build.yml@main
+    with:
+      name: Publish Maven snapshot
+      goals: deploy
+      maven-args: -DskipTests -Dspotless.skip=true
+    secrets:
+      FORGEJO_PACKAGE_USER: ${{ secrets.FORGEJO_PACKAGE_USER }}
+      FORGEJO_PACKAGE_TOKEN: ${{ secrets.FORGEJO_PACKAGES_TOKEN || secrets.FORGEJO_PACKAGE_TOKEN }}

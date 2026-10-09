@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.instanto</groupId>
+    <artifactId>instanto-teavm-pom</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath/>
+  </parent>
+  <artifactId>instanto-teavm-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Instanto TeaVM</name>
+  <description>TeaVM class-library additions, compiler extensions and the patched core, built on instanto-teavm-pom.</description>
+  <scm>
+    <url>https://github.com/instanto-io/instanto-teavm</url>
+    <connection>scm:git:https://github.com/instanto-io/instanto-teavm.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/instanto-io/instanto-teavm.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+  <modules>
+    <module>instanto-teavm-core-patch</module>
+    <module>instanto-teavm-classlib</module>
+    <module>instanto-teavm-extensions</module>
+  </modules>
+</project>
