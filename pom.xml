@@ -22,6 +22,7 @@
   </scm>
   <modules>
     <module>instanto-teavm-core-patch</module>
+    <module>instanto-teavm-jso-patch</module>
     <module>instanto-teavm-classlib</module>
     <module>instanto-teavm-extensions</module>
   </modules>

@@ -17,7 +17,7 @@ import tempfile
 CASES = {
     "class-init": ["ClassInitializationTest", "UmbrellaCatchTest", "JoinAfterCatchTest"],
     "field": ["RepeatedFieldReadTest", "RepeatedFieldReadEliminationTest"],
-    "timer": ["TimerTest", "GlobalInvocationTest"],
+    "timer": ["TimerTest", "GlobalInvocationTest", "TopLevelReceiverTest"],
     "minifier": ["MinifierCaptureTest", "TopLevelCollisionTest"],
     "wasm": ["PromiseTest", "PromiseVariantsTest"],
 }

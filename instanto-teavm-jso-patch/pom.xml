@@ -12,22 +12,27 @@
     <version>0.1.0-SNAPSHOT</version>
     <relativePath/>
   </parent>
-  <artifactId>instanto-teavm-core-patch</artifactId>
+  <artifactId>instanto-teavm-jso-patch</artifactId>
   <version>0.1.0-SNAPSHOT</version>
-  <name>Instanto TeaVM Core Patch</name>
-  <description>TeaVM 0.16.0 core with exception-safe class initialization elimination.</description>
+  <name>Instanto TeaVM JSO Patch</name>
+  <description>TeaVM 0.16.0 JSO implementation that calls @JSTopLevel functions as plain global calls.</description>
   <properties>
     <!-- This is an exact upstream binary baseline, not a consumer override. -->
     <patched.teavm.version>0.16.0</patched.teavm.version>
   </properties>
   <dependencies>
     <dependency>
+      <groupId>org.teavm</groupId><artifactId>teavm-jso-impl</artifactId>
+      <version>${patched.teavm.version}</version><scope>provided</scope>
+    </dependency>
+    <!-- The replaced classes compile against the rest of TeaVM, which consumers already have. -->
+    <dependency>
       <groupId>org.teavm</groupId><artifactId>teavm-core</artifactId>
       <version>${patched.teavm.version}</version><scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId><artifactId>teavm-classlib</artifactId>
-      <version>${patched.teavm.version}</version><scope>test</scope>
+      <version>${patched.teavm.version}</version><scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId><artifactId>teavm-junit</artifactId>
@@ -41,26 +46,18 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId><artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.6.1</version>
-        <executions><execution>
-          <id>consumer-scenarios</id><phase>generate-test-sources</phase><goals><goal>add-test-source</goal></goals>
-          <configuration><sources><source>src/it/consumer/src/main/java</source></sources></configuration>
-        </execution></executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId>
         <version>3.8.1</version>
         <executions>
           <execution>
-            <id>upstream-core</id><phase>generate-resources</phase><goals><goal>unpack</goal></goals>
+            <id>upstream-jso-impl</id><phase>generate-resources</phase><goals><goal>unpack</goal></goals>
             <configuration>
               <artifactItems>
                 <artifactItem>
-                  <groupId>org.teavm</groupId><artifactId>teavm-core</artifactId>
+                  <groupId>org.teavm</groupId><artifactId>teavm-jso-impl</artifactId>
                   <version>${patched.teavm.version}</version>
                   <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                  <excludes>org/teavm/model/optimization/ClassInitElimination*.class</excludes>
+                  <excludes>org/teavm/jso/impl/JS.class,org/teavm/jso/impl/JS$*.class,org/teavm/jso/impl/JSClassProcessor.class,org/teavm/jso/impl/JSClassProcessor$*.class,org/teavm/jso/impl/JSNativeInjector.class,org/teavm/jso/impl/JSNativeInjector$*.class</excludes>
                 </artifactItem>
               </artifactItems>
             </configuration>

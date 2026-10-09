@@ -5,13 +5,14 @@ Java applications need when TeaVM compiles them for the browser. Keeping these
 here means applications can use the same tested implementation instead of
 carrying their own copies of TeaVM classes.
 
-It provides three things:
+It provides four things:
 
 | Module | What it does | When to use it |
 | --- | --- | --- |
 | `instanto-teavm-classlib` | Supplies missing Java methods and corrects some handling of Unicode characters. | Code compiled by TeaVM needs `String.lines()`, `Character.getDirectionality()`, or the code-point corrections. |
 | `instanto-teavm-extensions` | Makes ordinary JUnit rules work in compiled tests, fixes repeated setup/cleanup, and can detect unsafe ThreadLocal access from browser callbacks. | TeaVM tests use JUnit rules or need the lifecycle fix. Enable callback diagnostics separately when wanted. |
-| `instanto-teavm-core-patch` | Corrects a TeaVM compiler fault that can leave static fields uninitialised after an exception. | Explicitly enable the `teavm-class-init-fix` profile for the affected TeaVM version. |
+| `instanto-teavm-core-patch` | Corrects a TeaVM compiler fault that can leave static fields uninitialised after an exception. | Applied by `instanto-teavm-pom` to every build; opt out with `-Dinstanto.teavm.stockCompiler`. |
+| `instanto-teavm-jso-patch` | Corrects a TeaVM compiler fault that turns calls to `@JSTopLevel` functions, such as `Window.setTimeout`, into calls on `null` in optimised JavaScript. | Applied with the core patch. |
 
 The supported baseline is **TeaVM 0.16.0 with Java 21**. Applications keep
 using TeaVM's standard Maven plugin. These artifacts have no Sarto runtime
@@ -62,8 +63,9 @@ enabling them in an application or test suite.
 ## What is packaged and what is still a proposal
 
 The classlib and extensions modules are normal artifacts. The class-initialisation
-core patch is packaged but enabled only by its explicit profile.
-Four additional compiler fixes are retained under `upstream-fixes` as review
+and global call patches replace TeaVM compiler classes, and every build that
+inherits `instanto-teavm-pom` uses them unless it opts out.
+Three additional compiler fixes are retained under `upstream-fixes` as review
 proposals. Normal builds do not apply them. Their reproducers and patches are
 centralised here so they can be reviewed and submitted upstream independently.
 

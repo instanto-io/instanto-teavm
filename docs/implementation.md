@@ -39,13 +39,18 @@ from code reached after the catch. An exception thrown before the first use in
 the try block then leaves static references null and computed primitive fields
 at their default values. The bug also occurs at `SIMPLE`.
 
-The optional `teavm-class-init-fix` profile supplies a corrected
-[`ClassInitElimination`](../instanto-teavm-core-patch/src/main/java/org/teavm/model/optimization/ClassInitElimination.java):
+`instanto-teavm-core-patch` supplies a corrected
+[`ClassInitElimination`](../instanto-teavm-core-patch/src/main/java/org/teavm/model/optimization/ClassInitElimination.java).
+`instanto-teavm-pom`'s `teavm-compiler-fixes` profile applies it, together with
+the [global call patch](#global-call-patch), to every build that inherits the
+POM. A build opts out with `-Dinstanto.teavm.stockCompiler`:
 
 ```sh
-mvn -Pteavm-class-init-fix -Dspotless.skip=true clean package
+mvn -Dspotless.skip=true clean package
 # To also run compiled browser tests:
-mvn -Pteavm-class-init-fix,teavm-browser-tests -Dspotless.skip=true clean test
+mvn -Pteavm-browser-tests -Dspotless.skip=true clean test
+# The same build on the unpatched compiler:
+mvn -Dinstanto.teavm.stockCompiler -Dspotless.skip=true clean package
 ```
 
 The pass uses TeaVM's existing `buildControlFlowGraph2` helper. Each basic block
@@ -63,16 +68,17 @@ the original 0.16.0 core with just `ClassInitElimination` and its inner class
 recompiled. Other upstream class files remain byte-for-byte identical. The
 upstream Maven artifact is not overwritten.
 
-The profile adds that artifact to the standard Maven compiler plugin's
-dependencies. For Surefire it supplies the same artifact with test scope and
-excludes the original `teavm-core` jar from the test classpath, avoiding reliance
-on project dependency order. The compiler's other dependencies still come from
-upstream TeaVM. This does not add JUnit or Sarto to application dependencies,
-change the optimization level, or enable ThreadLocal checks. Inheriting the
-parent alone leaves the patch off. BOM imports do not import this profile.
-The profile rejects a `teavm.version` other than 0.16.0. After an upstream fix,
-disable the profile, clean the generated output, and rerun the regressions before
-removing the patch module.
+The profile adds both patch artifacts to the standard Maven compiler plugin's
+dependencies. For Surefire it supplies the same artifacts with test scope and
+excludes the original `teavm-core` and `teavm-jso-impl` jars from the test
+classpath, avoiding reliance on project dependency order. The compiler's other
+dependencies still come from upstream TeaVM. This does not add JUnit or Sarto to
+application dependencies, change the optimization level, or enable ThreadLocal
+checks. BOM imports do not import this profile. The profile rejects a
+`teavm.version` other than 0.16.0; a build on another TeaVM version sets
+`-Dinstanto.teavm.stockCompiler`. After an upstream fix, build with that property,
+clean the generated output, and rerun the regressions before removing a patch
+module.
 
 Nine direct compiler tests cover catch handlers, joins, nested handlers, retry
 loops, shared handlers, and preservation of safe elimination. Nine Java browser
@@ -83,18 +89,93 @@ compiler and JUnit use. Its script checks a failing stock application, the
 patched JS application at SIMPLE/ADVANCED/FULL with minification off/on, the
 JS/Wasm GC JUnit matrix, and rejection of an incompatible version.
 
-This patch does not fix the separate timer, JSBody minifier, or optimized-Wasm
+This patch does not fix the separate JSBody minifier or optimized-Wasm
 promise defects. An additional repeated-field-read defect was isolated during
 verification: ADVANCED and FULL can reuse a value from a skipped try path in its handler,
 even when initialization is present. In the explicitly pre-initialized reproducer,
 disabling only `RepeatedFieldReadElimination` restores the correct result.
 Neither pass is disabled by this profile.
 
+## Global call patch
+
+TeaVM 0.16.0 can compile a call to a `@JSTopLevel` function into a member call
+on `null`, so it fails at run time with
+`TypeError: Cannot read properties of null (reading 'setTimeout')`. It affects
+TeaVM's own `Window.setTimeout`, `setInterval`, `clearTimeout` and the other
+top-level browser functions, and any `@JSTopLevel` method an application or
+library declares. Only optimised JavaScript is affected, and only where the
+surrounding code happens to produce the pattern below, which makes it hard to
+predict.
+
+### Where the fault lies
+
+`JSClassProcessor` rewrites a `@JSTopLevel` call into
+`JS.invoke(target, "name", arguments...)`. For a plain global, `getCallTarget`
+asks `JSValueMarshaller.moduleRef` for the target, and without `@JSModule` that
+is a variable holding a null constant. The null stands for "no receiver".
+
+The meaning is only recovered when the JavaScript is written:
+`JSNativeInjector` emits a bare `name(arguments)` only if its first argument is
+literally the expression `null` (`isNull` tests for a `ConstantExpr`). That
+depends on the decompiler folding the single-use null variable into the call.
+When an argument needs a conversion that is written as its own statement, such
+as a Java lambda becoming a JavaScript function, the null and the method name
+are left in variables, `isNull` sees a variable, and the injector writes a
+member call:
+
+```js
+var$3 = null;
+var$4 = "teavmCall";
+var$5 = /* lambda converted to a JavaScript function */;
+var$3[var$4](otji_JS_function(var$5, "run"));   // TypeError: null receiver
+```
+
+So the information that a call is global travels through the optimiser as an
+ordinary null value, and the code generator relies on an inlining decision it
+does not control. `get` and `set` on top-level properties use the same `isNull`
+test. They have not failed in any case tried, because their single argument is
+folded into the assignment, but they depend on the same assumption.
+
+### The correction
+
+[`instanto-teavm-jso-patch`](../instanto-teavm-jso-patch) is TeaVM's
+`teavm-jso-impl` 0.16.0 with three classes recompiled from
+[timer.patch](../upstream-fixes/patches/timer.patch). For a global target,
+`JSClassProcessor` now passes a reference to the global function itself and
+calls `JS.invokeGlobal`, or `JS.applyGlobal` for varargs. `JSNativeInjector`
+writes those as `(0, name)(arguments)`, a plain call whatever the decompiler
+does. The `(0, …)` form keeps strict-mode `this` undefined, as a direct global
+call does. Module, instance and Wasm GC calls keep their existing paths, and the
+other upstream class files are unchanged. The `teavm-compiler-fixes` profile
+applies it with the core patch.
+
+### Reproducer
+
+[`TopLevelReceiverTest`](../upstream-fixes/src/test/java/example/TopLevelReceiverTest.java)
+uses each kind of `@JSTopLevel` member the same way: a callback captures a Java
+collection that is dead after the call. On stock 0.16.0 at FULL, four cases fail
+with the null receiver: `Window.setTimeout`, `Window.setInterval`, and a declared
+global function with and without a result. A varargs function and property reads
+and writes, including a property holding a callback, pass on stock and are kept
+as guards. `GlobalInvocationTest` checks strict `this`, varargs and instance
+receivers. With the patch all pass at SIMPLE, ADVANCED and FULL:
+
+```sh
+python3 upstream-fixes/verify.py --teavm-source ../teavm --case timer --stock --level FULL
+python3 upstream-fixes/verify.py --teavm-source ../teavm --case timer --level FULL
+```
+
+The same tests run against the packaged artifact in
+`instanto-teavm-jso-patch`. Varargs of Java callbacks are a separate matter:
+TeaVM passes the elements of a varargs array as wrapped Java objects rather than
+JavaScript functions, so a global expecting functions cannot call them.
+
 ## Compiler fix proposals for review
 
 The five independent compiler defects now have draft source patches against
-TeaVM 0.16.0. Only the class-initialization patch is packaged by the consumer
-profile above. The other four proposals are isolated under `upstream-fixes`;
+TeaVM 0.16.0. The class-initialization and global call patches are packaged and
+applied by the profile above. The other three proposals are isolated under
+`upstream-fixes`;
 they do not change normal builds, published artifacts or the local upstream
 checkout. These are tested candidates, not upstream-approved changes.
 
@@ -140,7 +221,7 @@ Maven's relocated libraries, and places replacement classes on the test
 compiler's classpath. It prints the retained fixture and log paths. The runner
 configuration selects the requested optimization level; it disables no compiler
 pass. Consumer packaging and a complete upstream suite run remain separate
-follow-up work before adopting the four new proposals in normal builds.
+follow-up work before adopting the three remaining proposals in normal builds.
 
 ## Opt in to ThreadLocal checks
 
