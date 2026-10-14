@@ -26,5 +26,6 @@ On each TeaVM upgrade:
   each addition steps aside when it does;
 - reproduce the code-point faults on stock TeaVM before removing their
   corrections, which `CodePointsTest` covers;
-- turn off the version-bound `teavm-class-init-fix` profile before changing its
-  TeaVM version, then run the compiler and browser regressions.
+- build with `-Dinstanto.teavm.stockCompiler`, which turns off the version-bound
+  compiler patches, before changing the TeaVM version, then run the compiler
+  and browser regressions.

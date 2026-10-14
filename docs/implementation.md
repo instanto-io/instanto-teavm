@@ -68,10 +68,14 @@ the original 0.16.0 core with just `ClassInitElimination` and its inner class
 recompiled. Other upstream class files remain byte-for-byte identical. The
 upstream Maven artifact is not overwritten.
 
-The profile adds both patch artifacts to the standard Maven compiler plugin's
-dependencies. For Surefire it supplies the same artifacts with test scope and
-excludes the original `teavm-core` and `teavm-jso-impl` jars from the test
-classpath, avoiding reliance on project dependency order. The compiler's other
+The profile adds the core patch to the standard Maven compiler plugin's
+dependencies, since the plugin runs TeaVM's core itself. TeaVM loads its JSO
+implementation from the project's classpath instead, and does not order that
+classpath by declaration, so the JSO patch is a `provided` dependency and the
+profile manages `teavm-classlib` without the upstream `teavm-jso-impl`. For
+Surefire it supplies the core patch with test scope and excludes the original
+`teavm-core` and `teavm-jso-impl` jars from the test classpath, avoiding
+reliance on project dependency order. The compiler's other
 dependencies still come from upstream TeaVM. This does not add JUnit or Sarto to
 application dependencies, change the optimization level, or enable ThreadLocal
 checks. BOM imports do not import this profile. The profile rejects a

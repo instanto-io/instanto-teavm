@@ -80,7 +80,7 @@ The old TeaVM 0.15 suppressed-exception workaround is
 Run the JVM and browser verification with Java 21, Maven and Chromium:
 
 ```sh
-mvn -Pteavm-browser-tests,teavm-class-init-fix -Dspotless.skip=true \
+mvn -Pteavm-browser-tests -Dspotless.skip=true \
   -Dinstanto.teavm.threadLocalChecks=true clean verify
 ```
 

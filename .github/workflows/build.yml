@@ -16,7 +16,7 @@ jobs:
     with:
       name: Verify JVM, JavaScript and Wasm GC
       goals: clean verify
-      maven-args: -Pteavm-browser-tests,teavm-class-init-fix -Dspotless.skip=true -Dinstanto.teavm.threadLocalChecks=true
+      maven-args: -Pteavm-browser-tests -Dspotless.skip=true -Dinstanto.teavm.threadLocalChecks=true
     secrets:
       FORGEJO_PACKAGE_USER: ${{ secrets.FORGEJO_PACKAGE_USER }}
       FORGEJO_PACKAGE_TOKEN: ${{ secrets.FORGEJO_PACKAGES_TOKEN || secrets.FORGEJO_PACKAGE_READ_TOKEN || secrets.FORGEJO_PACKAGE_TOKEN }}
