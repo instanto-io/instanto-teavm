@@ -9,7 +9,7 @@ It provides four things:
 
 | Module | What it does | When to use it |
 | --- | --- | --- |
-| `instanto-teavm-classlib` | Supplies missing Java methods and corrects some handling of Unicode characters. | Code compiled by TeaVM needs `String.lines()`, `Character.getDirectionality()`, or the code-point corrections. |
+| `instanto-teavm-classlib` | Supplies missing Java methods and corrects some handling of Unicode characters and of `ConcurrentHashMap`. | Code compiled by TeaVM needs `String.lines()`, `Character.getDirectionality()`, the code-point corrections, or `ConcurrentHashMap.computeIfAbsent`/`computeIfPresent` leaving a key unmapped when the function returns `null`. |
 | `instanto-teavm-extensions` | Makes ordinary JUnit rules work in compiled tests, fixes repeated setup/cleanup, and can detect unsafe ThreadLocal access from browser callbacks. | TeaVM tests use JUnit rules or need the lifecycle fix. Enable callback diagnostics separately when wanted. |
 | `instanto-teavm-core-patch` | Corrects a TeaVM compiler fault that can leave static fields uninitialised after an exception. | Applied by `instanto-teavm-pom` to every build; opt out with `-Dinstanto.teavm.stockCompiler`. |
 | `instanto-teavm-jso-patch` | Corrects a TeaVM compiler fault that turns calls to `@JSTopLevel` functions, such as `Window.setTimeout`, into calls on `null` in optimised JavaScript. | Applied with the core patch. |

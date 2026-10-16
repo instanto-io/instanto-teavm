@@ -25,6 +25,11 @@ final class ClasslibAdditions implements ClassHolderTransformer {
   private static final ValueType CHARS = ValueType.arrayOf(ValueType.CHARACTER);
   private static final ValueType INT = ValueType.INTEGER;
   private static final ValueType CHAR_SEQUENCE = ValueType.object("java.lang.CharSequence");
+  private static final ValueType OBJECT = ValueType.object("java.lang.Object");
+  private static final ValueType CONCURRENT_HASH_MAP =
+      ValueType.object("java.util.concurrent.ConcurrentHashMap");
+  private static final ValueType FUNCTION = ValueType.object("java.util.function.Function");
+  private static final ValueType BI_FUNCTION = ValueType.object("java.util.function.BiFunction");
 
   @Override
   public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
@@ -37,8 +42,31 @@ final class ClasslibAdditions implements ClassHolderTransformer {
         delegate(cls, context, "offsetByCodePoints", "offset", CHAR_SEQUENCE, INT, INT, INT);
         delegate(cls, context, "offsetByCodePoints", "offset", CHARS, INT, INT, INT, INT, INT);
       }
+      case "java.util.concurrent.ConcurrentHashMap" -> {
+        delegateInstance(cls, context, "computeIfAbsent", OBJECT, FUNCTION, OBJECT);
+        delegateInstance(cls, context, "computeIfPresent", OBJECT, BI_FUNCTION, OBJECT);
+      }
       default -> {}
     }
+  }
+
+  /**
+   * Replaces the body of the instance method {@code name(parameters...)}, whose last type is the
+   * result, with a call to {@code ConcurrentMaps.name} taking the map and the same arguments.
+   * Absent methods are left alone.
+   */
+  private static void delegateInstance(
+      ClassHolder cls, ClassHolderTransformerContext context, String name, ValueType... signature) {
+    MethodHolder method = cls.getMethod(new MethodDescriptor(name, signature));
+    if (method == null || method.hasModifier(ElementModifier.STATIC)) return;
+    ValueType result = signature[signature.length - 1];
+    ProgramEmitter emit = ProgramEmitter.create(method, context.getHierarchy());
+    ValueEmitter[] arguments = new ValueEmitter[signature.length];
+    arguments[0] = emit.var(0, CONCURRENT_HASH_MAP);
+    for (int index = 0; index < signature.length - 1; index++) {
+      arguments[index + 1] = emit.var(index + 1, signature[index]);
+    }
+    emit.invoke(ConcurrentMaps.class.getName(), name, result, arguments).returnValue();
   }
 
   /** {@code public Stream<String> lines()}, calling {@code StringAdditions.lines(this)}. */
@@ -73,8 +101,9 @@ final class ClasslibAdditions implements ClassHolderTransformer {
   }
 
   /**
-   * Replaces the body of the static {@code name(parameters...)}, whose last type is the result, with
-   * a call to {@code CodePoints.helper} taking the same arguments. Absent methods are left alone.
+   * Replaces the body of the static {@code name(parameters...)}, whose last type is the result,
+   * with a call to {@code CodePoints.helper} taking the same arguments. Absent methods are left
+   * alone.
    */
   private static void delegate(
       ClassHolder cls,
