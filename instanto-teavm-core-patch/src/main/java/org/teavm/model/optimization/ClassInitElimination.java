@@ -30,58 +30,58 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.ProgramUtils;
 
 public class ClassInitElimination implements MethodOptimization {
-    @Override
-    public boolean optimize(MethodOptimizationContext context, Program program) {
-        // Exception edges leave the entry node; only normal completion reaches the exit node.
-        // Facts learned in a block must not reach its handler or a catch/normal-flow join.
-        Graph cfg = ProgramUtils.buildControlFlowGraph2(program);
-        DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
-        Graph domGraph = GraphUtils.buildDominatorGraph(dom, cfg.size());
+  @Override
+  public boolean optimize(MethodOptimizationContext context, Program program) {
+    // Exception edges leave the entry node; only normal completion reaches the exit node.
+    // Facts learned in a block must not reach its handler or a catch/normal-flow join.
+    Graph cfg = ProgramUtils.buildControlFlowGraph2(program);
+    DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
+    Graph domGraph = GraphUtils.buildDominatorGraph(dom, cfg.size());
 
-        Step start = new Step(0);
-        Deque<Step> stack = new ArrayDeque<>();
-        stack.push(start);
+    Step start = new Step(0);
+    Deque<Step> stack = new ArrayDeque<>();
+    stack.push(start);
 
-        while (!stack.isEmpty()) {
-            Step step = stack.pop();
-            int node = step.node;
-            // Even nodes represent block entry, odd nodes successful completion.
-            if (node % 2 != 0) {
-                BasicBlock block = program.basicBlockAt(node / 2);
+    while (!stack.isEmpty()) {
+      Step step = stack.pop();
+      int node = step.node;
+      // Even nodes represent block entry, odd nodes successful completion.
+      if (node % 2 != 0) {
+        BasicBlock block = program.basicBlockAt(node / 2);
 
-                Instruction nextInsn;
-                for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
-                    nextInsn = insn.getNext();
-                    if (insn instanceof InitClassInstruction) {
-                        InitClassInstruction initClass = (InitClassInstruction) insn;
-                        if (!step.initializedClasses.add(initClass.getClassName())) {
-                            insn.delete();
-                        }
-                        continue;
-                    }
-                    if (insn instanceof InvokeInstruction) {
-                        InvokeInstruction invoke = (InvokeInstruction) insn;
-                        step.initializedClasses.add(invoke.getMethod().getClassName());
-                    }
-                }
+        Instruction nextInsn;
+        for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
+          nextInsn = insn.getNext();
+          if (insn instanceof InitClassInstruction) {
+            InitClassInstruction initClass = (InitClassInstruction) insn;
+            if (!step.initializedClasses.add(initClass.getClassName())) {
+              insn.delete();
             }
-
-            for (int successor : domGraph.outgoingEdges(node)) {
-                Step next = new Step(successor);
-                next.initializedClasses.addAll(step.initializedClasses);
-                stack.push(next);
-            }
+            continue;
+          }
+          if (insn instanceof InvokeInstruction) {
+            InvokeInstruction invoke = (InvokeInstruction) insn;
+            step.initializedClasses.add(invoke.getMethod().getClassName());
+          }
         }
+      }
 
-        return false;
+      for (int successor : domGraph.outgoingEdges(node)) {
+        Step next = new Step(successor);
+        next.initializedClasses.addAll(step.initializedClasses);
+        stack.push(next);
+      }
     }
 
-    static class Step {
-        int node;
-        Set<String> initializedClasses = new HashSet<>();
+    return false;
+  }
 
-        Step(int node) {
-            this.node = node;
-        }
+  static class Step {
+    int node;
+    Set<String> initializedClasses = new HashSet<>();
+
+    Step(int node) {
+      this.node = node;
     }
+  }
 }

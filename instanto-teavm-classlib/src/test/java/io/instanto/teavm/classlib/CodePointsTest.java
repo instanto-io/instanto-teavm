@@ -23,9 +23,7 @@ public class CodePointsTest {
 
   @Test
   public void countsPairsAtEveryPositionAndWithinSlices() {
-    String[] values = {
-      "", "a", "a😀", "😀a", "a😀b😀", "\uD800a\uDC00"
-    };
+    String[] values = {"", "a", "a😀", "😀a", "a😀b😀", "\uD800a\uDC00"};
     int[] expected = {0, 1, 2, 2, 4, 3};
     for (int i = 0; i < values.length; i++) {
       char[] chars = values[i].toCharArray();

@@ -11,8 +11,8 @@ package io.instanto.teavm.classlib;
  *
  * <p>The Unicode bidirectional class is a property in its own right, and TeaVM ships no table for
  * it. This derives the classes that separate right-to-left text from left-to-right, which is what
- * callers use it for, from the blocks that carry them and from {@link Character#getType(int)}.
- * Weak and neutral classes within a script are approximated by category.
+ * callers use it for, from the blocks that carry them and from {@link Character#getType(int)}. Weak
+ * and neutral classes within a script are approximated by category.
  */
 public final class Directionality {
   private Directionality() {}
@@ -35,11 +35,34 @@ public final class Directionality {
         return Character.DIRECTIONALITY_SEGMENT_SEPARATOR;
       case 0x002C, 0x003A, 0x060C, 0x00A0, 0x202F, 0x2044, 0xFE50, 0xFE52, 0xFE55, 0xFF0C, 0xFF1A:
         return Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR;
-      case 0x002B, 0x002D, 0x207A, 0x207B, 0x208A, 0x208B, 0x2212, 0xFB29, 0xFE62, 0xFE63, 0xFF0B,
-          0xFF0D:
+      case 0x002B,
+      0x002D,
+      0x207A,
+      0x207B,
+      0x208A,
+      0x208B,
+      0x2212,
+      0xFB29,
+      0xFE62,
+      0xFE63,
+      0xFF0B,
+      0xFF0D:
         return Character.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR;
-      case 0x0023, 0x0024, 0x0025, 0x00A2, 0x00A3, 0x00A4, 0x00A5, 0x00B0, 0x00B1, 0x066A, 0x09F2,
-          0x09F3, 0x2030, 0x2031, 0x212E:
+      case 0x0023,
+      0x0024,
+      0x0025,
+      0x00A2,
+      0x00A3,
+      0x00A4,
+      0x00A5,
+      0x00B0,
+      0x00B1,
+      0x066A,
+      0x09F2,
+      0x09F3,
+      0x2030,
+      0x2031,
+      0x212E:
         return Character.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR;
       case 0x202A:
         return Character.DIRECTIONALITY_LEFT_TO_RIGHT_EMBEDDING;
@@ -69,11 +92,11 @@ public final class Directionality {
       case Character.UNASSIGNED:
         return Character.DIRECTIONALITY_UNDEFINED;
       case Character.UPPERCASE_LETTER,
-          Character.LOWERCASE_LETTER,
-          Character.TITLECASE_LETTER,
-          Character.MODIFIER_LETTER,
-          Character.OTHER_LETTER,
-          Character.LETTER_NUMBER:
+      Character.LOWERCASE_LETTER,
+      Character.TITLECASE_LETTER,
+      Character.MODIFIER_LETTER,
+      Character.OTHER_LETTER,
+      Character.LETTER_NUMBER:
         return Character.DIRECTIONALITY_LEFT_TO_RIGHT;
       default:
         return Character.DIRECTIONALITY_OTHER_NEUTRALS;

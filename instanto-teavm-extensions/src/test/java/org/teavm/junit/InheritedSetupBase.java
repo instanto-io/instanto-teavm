@@ -19,18 +19,18 @@ import org.junit.After;
 import org.junit.Before;
 
 public abstract class InheritedSetupBase {
-    protected int setupCount;
-    protected int teardownCount;
+  protected int setupCount;
+  protected int teardownCount;
 
-    @Before
-    public void countSetup() {
-        setupCount++;
-    }
+  @Before
+  public void countSetup() {
+    setupCount++;
+  }
 
-    @After
-    public void countTeardown() {
-        if (++teardownCount > 1) {
-            throw new AssertionError("@After ran " + teardownCount + " times");
-        }
+  @After
+  public void countTeardown() {
+    if (++teardownCount > 1) {
+      throw new AssertionError("@After ran " + teardownCount + " times");
     }
+  }
 }

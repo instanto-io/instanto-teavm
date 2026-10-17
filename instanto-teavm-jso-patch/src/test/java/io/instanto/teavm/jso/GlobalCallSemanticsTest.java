@@ -20,8 +20,8 @@ import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 /**
- * A global call made as a plain function call keeps JavaScript's meaning: a strict-mode global
- * sees an undefined {@code this}, varargs are spread, and instance calls keep their receiver.
+ * A global call made as a plain function call keeps JavaScript's meaning: a strict-mode global sees
+ * an undefined {@code this}, varargs are spread, and instance calls keep their receiver.
  */
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM

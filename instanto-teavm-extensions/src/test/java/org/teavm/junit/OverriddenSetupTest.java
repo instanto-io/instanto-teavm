@@ -16,6 +16,7 @@
 package org.teavm.junit;
 
 import static org.junit.Assert.assertEquals;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,26 +24,26 @@ import org.junit.runner.RunWith;
 
 @RunWith(TeaVMTestRunner.class)
 public class OverriddenSetupTest extends InheritedSetupBase {
-    private int overriddenSetupCount;
-    private int overriddenTeardownCount;
+  private int overriddenSetupCount;
+  private int overriddenTeardownCount;
 
-    @Before
-    @Override
-    public void countSetup() {
-        overriddenSetupCount++;
-    }
+  @Before
+  @Override
+  public void countSetup() {
+    overriddenSetupCount++;
+  }
 
-    @After
-    @Override
-    public void countTeardown() {
-        if (++overriddenTeardownCount > 1) {
-            throw new AssertionError("Overridden @After ran " + overriddenTeardownCount + " times");
-        }
+  @After
+  @Override
+  public void countTeardown() {
+    if (++overriddenTeardownCount > 1) {
+      throw new AssertionError("Overridden @After ran " + overriddenTeardownCount + " times");
     }
+  }
 
-    @Test
-    public void anOverriddenSetupRunsOncePerTest() {
-        assertEquals(1, overriddenSetupCount);
-        assertEquals(0, setupCount);
-    }
+  @Test
+  public void anOverriddenSetupRunsOncePerTest() {
+    assertEquals(1, overriddenSetupCount);
+    assertEquals(0, setupCount);
+  }
 }

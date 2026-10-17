@@ -16,18 +16,19 @@
 package org.teavm.junit;
 
 import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(TeaVMTestRunner.class)
 public class InheritedSetupTest extends InheritedSetupBase {
-    @Test
-    public void inheritedSetupRunsOncePerTest() {
-        assertEquals(1, setupCount);
-    }
+  @Test
+  public void inheritedSetupRunsOncePerTest() {
+    assertEquals(1, setupCount);
+  }
 
-    @Test
-    public void inheritedTeardownRunsOncePerTest() {
-        assertEquals(0, teardownCount);
-    }
+  @Test
+  public void inheritedTeardownRunsOncePerTest() {
+    assertEquals(0, teardownCount);
+  }
 }
