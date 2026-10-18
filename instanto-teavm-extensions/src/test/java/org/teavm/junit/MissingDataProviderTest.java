@@ -9,6 +9,50 @@ import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
 
 public class MissingDataProviderTest {
+  public static class Sample {
+    public void requiresMissingProvider() {
+      // Stub method for test runner inspection
+    }
+  }
+
+  @Test
+  public void jvmRunnerReportsMissingProviderRatherThanDereferencingNull() throws Exception {
+    TeaVMTestRunner runner = new TeaVMTestRunner(Sample.class);
+    var sourceField = TeaVMTestRunner.class.getDeclaredField("classSource");
+    sourceField.setAccessible(true);
+    ClassHolderSource source = (ClassHolderSource) sourceField.get(null);
+    var method =
+        source
+            .get(Sample.class.getName())
+            .getMethod(new MethodDescriptor("requiresMissingProvider", ValueType.VOID));
+    AnnotationHolder annotation = new AnnotationHolder("org.testng.annotations.Test");
+    annotation.getValues().put("dataProvider", new AnnotationValue("missing"));
+    method.getAnnotations().add(annotation);
+    var wrap =
+        TeaVMTestRunner.class.getDeclaredMethod(
+            "wrapWithDataProvider",
+            TeaVMTestRunner.Runner.class,
+            Object.class,
+            java.lang.reflect.Method.class);
+    wrap.setAccessible(true);
+    try {
+      InvocationTargetException error =
+          assertThrows(
+              InvocationTargetException.class,
+              () ->
+                  wrap.invoke(
+                      runner,
+                      (TeaVMTestRunner.Runner) args -> {},
+                      new Sample(),
+                      Sample.class.getMethod("requiresMissingProvider")));
+      assertTrue(error.getCause().toString(), error.getCause() instanceof IllegalStateException);
+      assertTrue(error.getCause().getMessage().contains("missing"));
+      assertTrue(error.getCause().getMessage().contains("requiresMissingProvider"));
+    } finally {
+      method.getAnnotations().remove("org.testng.annotations.Test");
+    }
+  }
+
   @Test
   public void missingProviderReportsTestAndProviderNames() throws Exception {
     ClassHolder owner = new ClassHolder("example.SampleTest");
@@ -20,7 +64,9 @@ public class MissingDataProviderTest {
         new TestEntryPointTransformer(owner.getName()) {
           @Override
           protected void generateLaunchProgram(
-              MethodHolder method, ClassHolderTransformerContext context) {}
+              MethodHolder method, ClassHolderTransformerContext context) {
+            // No-op for testing missing provider resolution
+          }
         };
     var method =
         TestEntryPointTransformer.class.getDeclaredMethod(

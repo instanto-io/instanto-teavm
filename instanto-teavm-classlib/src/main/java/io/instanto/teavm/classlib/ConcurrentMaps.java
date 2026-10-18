@@ -20,7 +20,7 @@ public final class ConcurrentMaps {
   private ConcurrentMaps() {}
 
   /** {@code ConcurrentHashMap.computeIfAbsent(key, mappingFunction)}. */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "java:S1319", "java:S4276"})
   public static Object computeIfAbsent(
       ConcurrentHashMap<Object, Object> map, Object key, Function<Object, Object> mappingFunction) {
     if (mappingFunction == null) throw new NullPointerException();
@@ -33,6 +33,7 @@ public final class ConcurrentMaps {
   }
 
   /** {@code ConcurrentHashMap.computeIfPresent(key, remappingFunction)}. */
+  @SuppressWarnings({"java:S1319", "java:S4276"})
   public static Object computeIfPresent(
       ConcurrentHashMap<Object, Object> map,
       Object key,

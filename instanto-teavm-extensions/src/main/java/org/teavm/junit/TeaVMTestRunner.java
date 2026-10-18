@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -77,6 +78,7 @@ import org.teavm.vm.TeaVMTarget;
  * <p>Only wrapWithBeforeAndAfter and its signatureOf helper differ in behaviour from that release.
  * Remove this copy when upgrading to a TeaVM release containing the fix; see README.
  */
+@SuppressWarnings({"java:S3776", "java:S1181", "java:S112", "java:S3011", "java:S1450", "java:S1168"})
 public class TeaVMTestRunner extends Runner implements Filterable {
   static final String JUNIT3_BASE_CLASS = "junit.framework.TestCase";
   static final MethodReference JUNIT3_BEFORE =
@@ -100,7 +102,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
   private Description suiteDescription;
   private static File outputDir;
   private Map<Method, Description> descriptions = new HashMap<>();
-  private static Map<TestPlatform, TestRunStrategy> runners = new HashMap<>();
+  private static Map<TestPlatform, TestRunStrategy> runners = new EnumMap<>(TestPlatform.class);
   private List<Method> filteredChildren;
   private static ReferenceCache referenceCache = new ReferenceCache();
   private List<TestRun> runsInCurrentClass = new ArrayList<>();
@@ -147,6 +149,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 }));
   }
 
+  @SuppressWarnings("java:S1130")
   public TeaVMTestRunner(Class<?> testClass) throws InitializationError {
     this.testClass = testClass;
   }
@@ -388,7 +391,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
   private List<Method> filterChildren(List<Method> children, TestPlatform platform) {
     return children.stream()
         .filter(child -> isPlatformPresent(child, platform))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private boolean shouldRunChild(Method child, TestPlatform platform) {
@@ -623,12 +626,16 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     for (Method method : testMethod.getDeclaringClass().getDeclaredMethods()) {
       AnnotationHolder providerAnnot = getAnnotation(method, TESTNG_PROVIDER);
       if (providerAnnot != null
+          && providerAnnot.getValue("name") != null
           && providerAnnot.getValue("name").getString().equals(providerName)) {
         provider = method;
         break;
       }
     }
 
+    if (provider == null) {
+      throw new IllegalStateException("No data provider '" + providerName + "' for " + testMethod);
+    }
     Object data;
     try {
       provider.setAccessible(true);
@@ -1009,14 +1016,14 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     var runs =
         runsInCurrentClass.stream()
             .filter(run -> run.getGroup().getKind() == platform.getPlatform())
-            .collect(Collectors.toList());
+            .toList();
     if (runs.isEmpty()) {
       return;
     }
 
-    File outputDir = getOutputPathForClass(platform);
-    outputDir.mkdirs();
-    File descriptorFile = new File(outputDir, "tests.json");
+    File classOutputDir = getOutputPathForClass(platform);
+    classOutputDir.mkdirs();
+    File descriptorFile = new File(classOutputDir, "tests.json");
     try (OutputStream output = new FileOutputStream(descriptorFile);
         OutputStream bufferedOutput = new BufferedOutputStream(output);
         Writer writer = new OutputStreamWriter(bufferedOutput)) {
