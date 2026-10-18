@@ -39,6 +39,7 @@ import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.jso.typedarrays.Uint16Array;
 
+@SuppressWarnings({"java:S107", "java:S1168", "java:S6201"})
 public final class JS {
   private JS() {}
 

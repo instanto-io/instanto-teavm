@@ -21,9 +21,12 @@ public final class CodePoints {
     }
     int end = offset + count;
     int result = count;
-    for (int i = offset; i < end - 1; i++) {
+    int i = offset;
+    while (i < end - 1) {
       if (Character.isHighSurrogate(a[i]) && Character.isLowSurrogate(a[i + 1])) {
         result--;
+        i += 2;
+      } else {
         i++;
       }
     }
@@ -34,28 +37,36 @@ public final class CodePoints {
   public static int offset(CharSequence seq, int index, int codePointOffset) {
     int length = seq.length();
     if (index < 0 || index > length) throw new IndexOutOfBoundsException();
+    return codePointOffset >= 0
+        ? offsetForward(seq, index, length, codePointOffset)
+        : offsetBackward(seq, index, codePointOffset);
+  }
+
+  private static int offsetForward(CharSequence seq, int index, int length, int codePointOffset) {
     int x = index;
-    if (codePointOffset >= 0) {
-      int i = 0;
-      for (; x < length && i < codePointOffset; i++) {
-        if (Character.isHighSurrogate(seq.charAt(x++))
-            && x < length
-            && Character.isLowSurrogate(seq.charAt(x))) {
-          x++;
-        }
+    int i = 0;
+    for (; x < length && i < codePointOffset; i++) {
+      if (Character.isHighSurrogate(seq.charAt(x++))
+          && x < length
+          && Character.isLowSurrogate(seq.charAt(x))) {
+        x++;
       }
-      if (i < codePointOffset) throw new IndexOutOfBoundsException();
-    } else {
-      int i = codePointOffset;
-      for (; x > 0 && i < 0; i++) {
-        if (Character.isLowSurrogate(seq.charAt(--x))
-            && x > 0
-            && Character.isHighSurrogate(seq.charAt(x - 1))) {
-          x--;
-        }
-      }
-      if (i < 0) throw new IndexOutOfBoundsException();
     }
+    if (i < codePointOffset) throw new IndexOutOfBoundsException();
+    return x;
+  }
+
+  private static int offsetBackward(CharSequence seq, int index, int codePointOffset) {
+    int x = index;
+    int i = codePointOffset;
+    for (; x > 0 && i < 0; i++) {
+      if (Character.isLowSurrogate(seq.charAt(--x))
+          && x > 0
+          && Character.isHighSurrogate(seq.charAt(x - 1))) {
+        x--;
+      }
+    }
+    if (i < 0) throw new IndexOutOfBoundsException();
     return x;
   }
 
@@ -69,24 +80,32 @@ public final class CodePoints {
       throw new IndexOutOfBoundsException();
     }
     int limit = start + count;
+    return codePointOffset >= 0
+        ? offsetForward(a, index, limit, codePointOffset)
+        : offsetBackward(a, index, start, codePointOffset);
+  }
+
+  private static int offsetForward(char[] a, int index, int limit, int codePointOffset) {
     int x = index;
-    if (codePointOffset >= 0) {
-      int i = 0;
-      for (; x < limit && i < codePointOffset; i++) {
-        if (Character.isHighSurrogate(a[x++]) && x < limit && Character.isLowSurrogate(a[x])) {
-          x++;
-        }
+    int i = 0;
+    for (; x < limit && i < codePointOffset; i++) {
+      if (Character.isHighSurrogate(a[x++]) && x < limit && Character.isLowSurrogate(a[x])) {
+        x++;
       }
-      if (i < codePointOffset) throw new IndexOutOfBoundsException();
-    } else {
-      int i = codePointOffset;
-      for (; x > start && i < 0; i++) {
-        if (Character.isLowSurrogate(a[--x]) && x > start && Character.isHighSurrogate(a[x - 1])) {
-          x--;
-        }
-      }
-      if (i < 0) throw new IndexOutOfBoundsException();
     }
+    if (i < codePointOffset) throw new IndexOutOfBoundsException();
+    return x;
+  }
+
+  private static int offsetBackward(char[] a, int index, int start, int codePointOffset) {
+    int x = index;
+    int i = codePointOffset;
+    for (; x > start && i < 0; i++) {
+      if (Character.isLowSurrogate(a[--x]) && x > start && Character.isHighSurrogate(a[x - 1])) {
+        x--;
+      }
+    }
+    if (i < 0) throw new IndexOutOfBoundsException();
     return x;
   }
 }

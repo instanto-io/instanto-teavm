@@ -42,6 +42,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
+@SuppressWarnings({"java:S131", "java:S1192", "java:S3776", "java:S6201", "java:S6208"})
 public class JSNativeInjector implements Injector, DependencyPlugin {
   private Set<MethodReference> reachedFunctorMethods = new HashSet<>();
   private Set<DependencyNode> functorParamNodes = new HashSet<>();

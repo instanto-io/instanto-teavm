@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import junit.framework.TestCase;
 import org.junit.runner.Description;
@@ -78,7 +77,14 @@ import org.teavm.vm.TeaVMTarget;
  * <p>Only wrapWithBeforeAndAfter and its signatureOf helper differ in behaviour from that release.
  * Remove this copy when upgrading to a TeaVM release containing the fix; see README.
  */
-@SuppressWarnings({"java:S3776", "java:S1181", "java:S112", "java:S3011", "java:S1450", "java:S1168"})
+@SuppressWarnings({
+  "java:S3776",
+  "java:S1181",
+  "java:S112",
+  "java:S3011",
+  "java:S1450",
+  "java:S1168"
+})
 public class TeaVMTestRunner extends Runner implements Filterable {
   static final String JUNIT3_BASE_CLASS = "junit.framework.TestCase";
   static final MethodReference JUNIT3_BEFORE =
@@ -389,9 +395,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
   }
 
   private List<Method> filterChildren(List<Method> children, TestPlatform platform) {
-    return children.stream()
-        .filter(child -> isPlatformPresent(child, platform))
-        .toList();
+    return children.stream().filter(child -> isPlatformPresent(child, platform)).toList();
   }
 
   private boolean shouldRunChild(Method child, TestPlatform platform) {

@@ -26,6 +26,7 @@ import org.teavm.junit.TestPlatform;
 @SkipJVM
 @OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @TeaVMProperties(@TeaVMProperty(key = ThreadLocalChecksPlugin.PROPERTY, value = "true"))
+@SuppressWarnings({"java:S2925", "java:S1144"})
 public class ThreadLocalChecksTest {
   @Test
   public void callbackCannotReadWriteOrRemoveSuspendedThreadState() {

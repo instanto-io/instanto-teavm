@@ -48,22 +48,7 @@ public class ClassInitElimination implements MethodOptimization {
       // Even nodes represent block entry, odd nodes successful completion.
       if (node % 2 != 0) {
         BasicBlock block = program.basicBlockAt(node / 2);
-
-        Instruction nextInsn;
-        for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
-          nextInsn = insn.getNext();
-          if (insn instanceof InitClassInstruction) {
-            InitClassInstruction initClass = (InitClassInstruction) insn;
-            if (!step.initializedClasses.add(initClass.getClassName())) {
-              insn.delete();
-            }
-            continue;
-          }
-          if (insn instanceof InvokeInstruction) {
-            InvokeInstruction invoke = (InvokeInstruction) insn;
-            step.initializedClasses.add(invoke.getMethod().getClassName());
-          }
-        }
+        eliminateInBlock(block, step.initializedClasses);
       }
 
       for (int successor : domGraph.outgoingEdges(node)) {
@@ -74,6 +59,22 @@ public class ClassInitElimination implements MethodOptimization {
     }
 
     return false;
+  }
+
+  private static void eliminateInBlock(BasicBlock block, Set<String> initializedClasses) {
+    Instruction nextInsn;
+    for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
+      nextInsn = insn.getNext();
+      if (insn instanceof InitClassInstruction initClass) {
+        if (!initializedClasses.add(initClass.getClassName())) {
+          insn.delete();
+        }
+        continue;
+      }
+      if (insn instanceof InvokeInstruction invoke) {
+        initializedClasses.add(invoke.getMethod().getClassName());
+      }
+    }
   }
 
   static class Step {

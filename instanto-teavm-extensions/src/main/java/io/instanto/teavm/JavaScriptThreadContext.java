@@ -48,7 +48,7 @@ final class JavaScriptThreadContext extends AbstractRendererListener implements 
           .endDeclaration();
       return;
     }
-    // simpleThread.js has no current-thread marker. Wrap only the Java runner;
+    // The simple thread runtime has no current-thread marker. Wrap only the Java runner;
     // the native completion callback must run after the marker has been restored.
     writer.startVariableDeclaration().appendFunction(ACTIVE).append("false").endDeclaration();
     writer

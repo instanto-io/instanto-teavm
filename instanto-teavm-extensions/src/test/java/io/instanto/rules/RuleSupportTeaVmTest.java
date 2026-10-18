@@ -30,7 +30,9 @@ import org.teavm.junit.TeaVMTestRunner;
 @SkipJVM
 public class RuleSupportTeaVmTest {
 
-  static final List<String> EVENTS = new ArrayList<>();
+  private static final List<String> EXPECTED_EVENTS =
+      List.of("second before", "first before", "fromMethod before", "test");
+  static final List<String> actualEvents = new ArrayList<>();
   static String describedAs;
   static int depth;
 
@@ -44,10 +46,11 @@ public class RuleSupportTeaVmTest {
   }
 
   @Test
+  @SuppressWarnings("java:S5976") // TeaVM does not support parameterized tests
   public void bothRulesWrappedThisTest() {
-    EVENTS.add("test");
+    actualEvents.add("test");
 
-    assertEquals(List.of("second before", "first before", "fromMethod before", "test"), EVENTS);
+    assertEquals(EXPECTED_EVENTS, actualEvents);
   }
 
   @Test
@@ -62,19 +65,21 @@ public class RuleSupportTeaVmTest {
   }
 
   @Test
+  @SuppressWarnings({"java:S4144", "java:S5976"}) // TeaVM does not support parameterized tests
   public void aRuleDeclaredAsAMethodIsAppliedInsideTheFields() {
-    EVENTS.add("test");
+    actualEvents.add("test");
 
     // JUnit applies methods before fields, so the method rule sits inside both fields.
-    assertEquals(List.of("second before", "first before", "fromMethod before", "test"), EVENTS);
+    assertEquals(EXPECTED_EVENTS, actualEvents);
   }
 
   @Test
+  @SuppressWarnings({"java:S4144", "java:S5976"}) // TeaVM does not support parameterized tests
   public void theRulesUnwindInReverse() {
-    EVENTS.add("test");
+    actualEvents.add("test");
 
     // The after entries are appended as the rules unwind, so a later test sees the full cycle.
-    assertEquals(List.of("second before", "first before", "fromMethod before", "test"), EVENTS);
+    assertEquals(EXPECTED_EVENTS, actualEvents);
   }
 
   static final class RecordingRule implements TestRule {
@@ -91,15 +96,15 @@ public class RuleSupportTeaVmTest {
         @Override
         public void evaluate() throws Throwable {
           if (depth++ == 0) {
-            EVENTS.clear();
+            actualEvents.clear();
           }
           describedAs = description.getDisplayName();
-          EVENTS.add(name + " before");
+          actualEvents.add(name + " before");
           try {
             base.evaluate();
           } finally {
             depth--;
-            EVENTS.add(name + " after");
+            actualEvents.add(name + " after");
           }
         }
       };

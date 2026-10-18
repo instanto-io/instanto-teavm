@@ -52,6 +52,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
   private static final String STATEMENT = "org.junit.runners.model.Statement";
   private static final String DESCRIPTION = "org.junit.runner.Description";
   private static final String FRAMEWORK_METHOD = "org.junit.runners.model.FrameworkMethod";
+  private static final String TEST_CASE_FIELD = "testCase";
 
   private String testClassName;
   private int suffixGenerator;
@@ -91,6 +92,8 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
             generateApplyRulesProgram(method, context.getHierarchy());
             method.getModifiers().remove(ElementModifier.NATIVE);
             break;
+          default:
+            break;
         }
       }
     }
@@ -103,7 +106,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
 
   private void generateBeforeProgram(MethodHolder method, ClassHierarchy hierarchy) {
     ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
-    ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
+    ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, TEST_CASE_FIELD, Object.class);
 
     if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testClassName, false)) {
       testCaseVar.cast(ValueType.object(JUNIT3_BASE_CLASS)).invokeVirtual(JUNIT3_BEFORE);
@@ -131,7 +134,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
 
   private Program generateAfterProgram(MethodHolder method, ClassHierarchy hierarchy) {
     ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
-    ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
+    ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, TEST_CASE_FIELD, Object.class);
 
     List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
     Set<MethodDescriptor> seen = new HashSet<>();
@@ -169,7 +172,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
       return;
     }
 
-    ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
+    ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, TEST_CASE_FIELD, Object.class);
     ValueEmitter description =
         pe.invoke(
             TestEntryPoint.class.getName(),
@@ -231,28 +234,8 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
 
     List<RuleEntry> rules = new ArrayList<>();
     for (ClassReader cls : classes) {
-      for (MethodReader method : cls.getMethods()) {
-        AnnotationReader annotation = method.getAnnotations().get(JUNIT4_RULE);
-        if (annotation == null
-            || method.hasModifier(ElementModifier.STATIC)
-            || method.parameterCount() > 0) {
-          continue;
-        }
-        int ruleType = ruleTypeOf(classSource, method.getResultType());
-        if (ruleType >= 0) {
-          rules.add(new RuleEntry(cls.getName(), null, method, orderOf(annotation), 0, ruleType));
-        }
-      }
-      for (FieldReader field : cls.getFields()) {
-        AnnotationReader annotation = field.getAnnotations().get(JUNIT4_RULE);
-        if (annotation == null || field.hasModifier(ElementModifier.STATIC)) {
-          continue;
-        }
-        int ruleType = ruleTypeOf(classSource, field.getType());
-        if (ruleType >= 0) {
-          rules.add(new RuleEntry(cls.getName(), field, null, orderOf(annotation), 1, ruleType));
-        }
-      }
+      collectMethodRules(classSource, cls, rules);
+      collectFieldRules(classSource, cls, rules);
     }
 
     rules.sort(
@@ -266,6 +249,36 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
           return Integer.compare(first.kind, second.kind);
         });
     return rules;
+  }
+
+  private void collectMethodRules(
+      ClassReaderSource classSource, ClassReader cls, List<RuleEntry> rules) {
+    for (MethodReader method : cls.getMethods()) {
+      AnnotationReader annotation = method.getAnnotations().get(JUNIT4_RULE);
+      if (annotation == null
+          || method.hasModifier(ElementModifier.STATIC)
+          || method.parameterCount() > 0) {
+        continue;
+      }
+      int ruleType = ruleTypeOf(classSource, method.getResultType());
+      if (ruleType >= 0) {
+        rules.add(new RuleEntry(cls.getName(), null, method, orderOf(annotation), 0, ruleType));
+      }
+    }
+  }
+
+  private void collectFieldRules(
+      ClassReaderSource classSource, ClassReader cls, List<RuleEntry> rules) {
+    for (FieldReader field : cls.getFields()) {
+      AnnotationReader annotation = field.getAnnotations().get(JUNIT4_RULE);
+      if (annotation == null || field.hasModifier(ElementModifier.STATIC)) {
+        continue;
+      }
+      int ruleType = ruleTypeOf(classSource, field.getType());
+      if (ruleType >= 0) {
+        rules.add(new RuleEntry(cls.getName(), field, null, orderOf(annotation), 1, ruleType));
+      }
+    }
   }
 
   /**
@@ -397,7 +410,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
     }
 
     ValueEmitter data =
-        pe.getField(TestEntryPoint.class, "testCase", Object.class)
+        pe.getField(TestEntryPoint.class, TEST_CASE_FIELD, Object.class)
             .cast(ValueType.object(testMethodReader.getOwnerName()))
             .invokeSpecial(providerMethod.getReference());
     if (data.getType() instanceof ValueType.Array) {
@@ -480,8 +493,8 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
   }
 
   private ValueEmitter convertArgument(ValueEmitter value, ValueType type) {
-    if (type instanceof ValueType.Primitive) {
-      switch (((ValueType.Primitive) type).getKind()) {
+    if (type instanceof ValueType.Primitive primitive) {
+      switch (primitive.getKind()) {
         case BOOLEAN:
           return value.cast(Boolean.class).invokeVirtual("booleanValue", boolean.class);
         case CHARACTER:

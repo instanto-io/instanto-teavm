@@ -46,7 +46,9 @@ final class ClasslibAdditions implements ClassHolderTransformer {
         delegateInstance(cls, context, "computeIfAbsent", OBJECT, FUNCTION, OBJECT);
         delegateInstance(cls, context, "computeIfPresent", OBJECT, BI_FUNCTION, OBJECT);
       }
-      default -> {}
+      default -> {
+        // No additions needed for other classes
+      }
     }
   }
 

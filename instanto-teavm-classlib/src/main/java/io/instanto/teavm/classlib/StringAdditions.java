@@ -21,13 +21,17 @@ public final class StringAdditions {
     List<String> lines = new ArrayList<>();
     int start = 0;
     int length = text.length();
-    for (int i = 0; i < length; i++) {
+    int i = 0;
+    while (i < length) {
       char c = text.charAt(i);
       if (c == '\n' || c == '\r') {
         lines.add(text.substring(start, i));
-        if (c == '\r' && i + 1 < length && text.charAt(i + 1) == '\n') i++;
+        if (c == '\r' && i + 1 < length && text.charAt(i + 1) == '\n') {
+          i++;
+        }
         start = i + 1;
       }
+      i++;
     }
     if (start < length) lines.add(text.substring(start));
     return lines.stream();

@@ -85,6 +85,7 @@ public class CodePointsTest {
   }
 
   @Test
+  @SuppressWarnings("java:S1858")
   public void stringReplacementAndIdentity() {
     String text = new String(new char[] {'a', 'b', 'a'});
     CharSequence same = "a";

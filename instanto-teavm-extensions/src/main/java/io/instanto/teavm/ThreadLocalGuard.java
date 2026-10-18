@@ -10,6 +10,7 @@ import org.teavm.interop.Platforms;
 import org.teavm.runtime.Fiber;
 
 /** Runtime implementation used only by instrumented TeaVM code, not an application API. */
+@SuppressWarnings("java:S2583")
 public final class ThreadLocalGuard {
   private ThreadLocalGuard() {}
 

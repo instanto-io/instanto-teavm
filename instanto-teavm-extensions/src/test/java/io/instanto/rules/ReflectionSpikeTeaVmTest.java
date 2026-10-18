@@ -33,7 +33,10 @@ public class ReflectionSpikeTeaVmTest {
    * method. It asserts nothing; it exists to be resolved reflectively below.
    */
   @Test
-  public void probeTarget() {}
+  @SuppressWarnings("java:S2699")
+  public void probeTarget() {
+    // Retained for reflective resolution and invocation by subsequent test methods.
+  }
 
   @Test
   public void canObtainAndInvokeADeclaredMethod() throws Exception {

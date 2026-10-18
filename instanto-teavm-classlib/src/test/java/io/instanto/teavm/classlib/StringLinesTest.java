@@ -8,7 +8,6 @@ package io.instanto.teavm.classlib;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -44,6 +43,6 @@ public class StringLinesTest {
   }
 
   private static List<String> lines(String text) {
-    return text.lines().collect(Collectors.toList());
+    return text.lines().toList();
   }
 }

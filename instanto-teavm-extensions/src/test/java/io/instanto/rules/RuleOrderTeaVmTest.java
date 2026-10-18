@@ -28,7 +28,8 @@ import org.teavm.junit.TeaVMTestRunner;
 @SkipJVM
 public class RuleOrderTeaVmTest {
 
-  static final List<String> EVENTS = new ArrayList<>();
+  private static final List<String> EXPECTED_EVENTS = List.of("low before", "high before", "test");
+  static final List<String> actualEvents = new ArrayList<>();
 
   @Rule(order = 10)
   public TestRule declaredFirstWithHighOrder = new RecordingRule("high");
@@ -38,9 +39,9 @@ public class RuleOrderTeaVmTest {
 
   @Test
   public void theHigherOrderRuleIsTheInnerOne() {
-    EVENTS.add("test");
+    actualEvents.add("test");
 
-    assertEquals(List.of("low before", "high before", "test"), EVENTS);
+    assertEquals(EXPECTED_EVENTS, actualEvents);
   }
 
   static final class RecordingRule implements TestRule {
@@ -56,7 +57,7 @@ public class RuleOrderTeaVmTest {
       return new Statement() {
         @Override
         public void evaluate() throws Throwable {
-          EVENTS.add(name + " before");
+          actualEvents.add(name + " before");
           base.evaluate();
         }
       };

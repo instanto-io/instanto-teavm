@@ -49,7 +49,6 @@ public class RuleExamplesTeaVmTest {
   /** A TestRule providing a per-test resource, opened before and closed after. */
   static final class ResourceRule implements TestRule {
     private List<String> resource;
-    private boolean closed;
 
     List<String> resource() {
       return resource;
@@ -62,11 +61,7 @@ public class RuleExamplesTeaVmTest {
         public void evaluate() throws Throwable {
           resource = new ArrayList<>();
           resource.add("opened-for:" + description.getMethodName());
-          try {
-            base.evaluate();
-          } finally {
-            closed = true;
-          }
+          base.evaluate();
         }
       };
     }

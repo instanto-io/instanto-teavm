@@ -24,6 +24,7 @@ import org.teavm.junit.TestPlatform;
 @SkipJVM
 @OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @TeaVMProperties(@TeaVMProperty(key = ThreadLocalChecksPlugin.PROPERTY, value = "true"))
+@SuppressWarnings("java:S2925")
 public class RuleSupportIntegrationTest {
   private final ThreadLocal<String> context = new ThreadLocal<>();
 

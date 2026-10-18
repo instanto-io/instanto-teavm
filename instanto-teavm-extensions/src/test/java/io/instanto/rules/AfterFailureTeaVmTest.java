@@ -45,5 +45,8 @@ public class AfterFailureTeaVmTest {
   }
 
   @Test
-  public void bodyPassesBeforeTeardownFails() {}
+  @SuppressWarnings("java:S2699")
+  public void bodyPassesBeforeTeardownFails() {
+    // Assertions are evaluated in expectAfterFailure rule when @After teardown executes.
+  }
 }

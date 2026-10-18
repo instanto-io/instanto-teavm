@@ -9,6 +9,7 @@ import io.instanto.rules.internal.SuspensionSafeChildren;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -42,24 +43,7 @@ public class DescriptionChildrenTransformer implements ClassHolderTransformer {
     }
     int rewritten = 0;
     for (MethodHolder method : cls.getMethods()) {
-      Program program = method.getProgram();
-      if (program == null) {
-        continue;
-      }
-      for (int i = 0; i < program.basicBlockCount(); i++) {
-        for (var instruction : program.basicBlockAt(i)) {
-          if (instruction instanceof ConstructInstruction construct
-              && CONCURRENT_LINKED_QUEUE.equals(construct.getType())) {
-            construct.setType(REPLACEMENT);
-            rewritten++;
-          } else if (instruction instanceof InvokeInstruction invoke
-              && CONCURRENT_LINKED_QUEUE.equals(invoke.getMethod().getClassName())
-              && "<init>".equals(invoke.getMethod().getName())) {
-            invoke.setMethod(new MethodReference(REPLACEMENT, "<init>", ValueType.VOID));
-            rewritten++;
-          }
-        }
-      }
+      rewritten += rewriteMethod(method);
     }
     if (rewritten != 2) {
       // Fail loudly rather than silently leaving Description referencing a class TeaVM
@@ -73,5 +57,36 @@ public class DescriptionChildrenTransformer implements ClassHolderTransformer {
               + " instructions. This JUnit version builds its children differently;"
               + " DescriptionChildrenTransformer needs updating.");
     }
+  }
+
+  private int rewriteMethod(MethodHolder method) {
+    Program program = method.getProgram();
+    if (program == null) {
+      return 0;
+    }
+    int rewritten = 0;
+    for (int i = 0; i < program.basicBlockCount(); i++) {
+      for (Instruction instruction : program.basicBlockAt(i)) {
+        if (rewriteInstruction(instruction)) {
+          rewritten++;
+        }
+      }
+    }
+    return rewritten;
+  }
+
+  private boolean rewriteInstruction(Instruction instruction) {
+    if (instruction instanceof ConstructInstruction construct
+        && CONCURRENT_LINKED_QUEUE.equals(construct.getType())) {
+      construct.setType(REPLACEMENT);
+      return true;
+    }
+    if (instruction instanceof InvokeInstruction invoke
+        && CONCURRENT_LINKED_QUEUE.equals(invoke.getMethod().getClassName())
+        && "<init>".equals(invoke.getMethod().getName())) {
+      invoke.setMethod(new MethodReference(REPLACEMENT, "<init>", ValueType.VOID));
+      return true;
+    }
+    return false;
   }
 }

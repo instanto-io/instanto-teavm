@@ -16,6 +16,7 @@ final class TestEntryPoint {
 
   private TestEntryPoint() {}
 
+  @SuppressWarnings("java:S112")
   public static void run(String name) throws Throwable {
     List<Launcher> launchers = new ArrayList<>();
     testCase = createTestCase();
@@ -27,10 +28,13 @@ final class TestEntryPoint {
 
   private static native Object createTestCase();
 
+  @SuppressWarnings("java:S3398") // Synthesized by TestEntryPointTransformer
   private static native void before();
 
+  @SuppressWarnings("java:S112")
   private static native void launchers(String name, List<Launcher> result) throws Throwable;
 
+  @SuppressWarnings("java:S3398") // Synthesized by TestEntryPointTransformer
   private static native void after();
 
   /** Wraps the statement in the test case's rules, and returns it unchanged when there are none. */
@@ -50,7 +54,7 @@ final class TestEntryPoint {
       try {
         return new FrameworkMethod(cls.getDeclaredMethod(simpleName));
       } catch (NoSuchMethodException notHere) {
-        continue;
+        // Search superclass
       }
     }
     throw new IllegalStateException(
@@ -92,11 +96,13 @@ final class TestEntryPoint {
         className, simpleName.isEmpty() ? className : simpleName);
   }
 
+  @SuppressWarnings("java:S112")
   public static void main(String[] args) throws Throwable {
     run(args.length == 1 ? args[0] : null);
   }
 
   interface Launcher {
+    @SuppressWarnings("java:S112")
     void launch(Object testCase) throws Throwable;
   }
 
@@ -108,6 +114,10 @@ final class TestEntryPoint {
     }
 
     @Override
+    @SuppressWarnings({
+      "java:S112",
+      "java:S1181"
+    }) // Must handle Throwable for test assertion errors
     public void evaluate() throws Throwable {
       before();
       Throwable failure = null;

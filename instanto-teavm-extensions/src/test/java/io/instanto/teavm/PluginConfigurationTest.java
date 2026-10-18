@@ -38,19 +38,18 @@ public class PluginConfigurationTest {
   public void systemPropertyEnablesChecksUnlessCompilerExplicitlyDisablesThem() {
     System.setProperty(ThreadLocalChecksPlugin.PROPERTY, "true");
     // This fake host has no supported backend: reaching backend validation proves activation.
+    ThreadLocalChecksPlugin plugin = new ThreadLocalChecksPlugin();
+    TeaVMHost invalidHost = host(null, new ArrayList<>());
     IllegalArgumentException error =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> new ThreadLocalChecksPlugin().install(host(null, new ArrayList<>())));
+        assertThrows(IllegalArgumentException.class, () -> plugin.install(invalidHost));
     assertTrue(error.getMessage().contains("supports JavaScript and Wasm GC only"));
     List<String> calls = new ArrayList<>();
     new ThreadLocalChecksPlugin().install(host("false", calls));
     assertEquals(List.of("getProperties"), calls);
 
     System.setProperty(ThreadLocalChecksPlugin.PROPERTY, "invalid");
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new ThreadLocalChecksPlugin().install(host(null, new ArrayList<>())));
+    TeaVMHost invalidHost2 = host(null, new ArrayList<>());
+    assertThrows(IllegalArgumentException.class, () -> plugin.install(invalidHost2));
   }
 
   @Test
@@ -64,12 +63,11 @@ public class PluginConfigurationTest {
 
   @Test
   public void invalidOptionAndUnsupportedTargetsFailClearly() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new ThreadLocalChecksPlugin().install(host("tru", new ArrayList<>())));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new ThreadLocalChecksPlugin().install(host("true", new ArrayList<>())));
+    ThreadLocalChecksPlugin plugin = new ThreadLocalChecksPlugin();
+    TeaVMHost invalidOptionHost = host("tru", new ArrayList<>());
+    TeaVMHost unsupportedHost = host("true", new ArrayList<>());
+    assertThrows(IllegalArgumentException.class, () -> plugin.install(invalidOptionHost));
+    assertThrows(IllegalArgumentException.class, () -> plugin.install(unsupportedHost));
   }
 
   private static TeaVMHost host(String value, List<String> calls) {

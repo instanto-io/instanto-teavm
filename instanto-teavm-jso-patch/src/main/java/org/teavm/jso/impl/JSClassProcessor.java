@@ -96,6 +96,15 @@ import org.teavm.rhino.javascript.Context;
 import org.teavm.rhino.javascript.ast.AstRoot;
 import org.teavm.rhino.javascript.ast.FunctionNode;
 
+@SuppressWarnings({
+  "java:S135",
+  "java:S1066",
+  "java:S1117",
+  "java:S1192",
+  "java:S3776",
+  "java:S6201",
+  "java:S6213"
+})
 class JSClassProcessor {
   private static final String NO_SIDE_EFFECTS = NoSideEffects.class.getName();
   private final ClassReaderSource classSource;

@@ -7,7 +7,7 @@ package io.instanto.rules;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 
 import java.lang.reflect.Method;
 import org.junit.Rule;
@@ -62,12 +62,15 @@ public class VoidInvokeTeaVmTest {
   public void rawReflectionReturnsNullForAVoidMethod() throws Exception {
     Method method = VoidInvokeTeaVmTest.class.getDeclaredMethod("probeVoidMethod");
     assertEquals(void.class, method.getReturnType());
-    assertTrue("Void.TYPE is void.class", Void.TYPE == method.getReturnType());
+    assertSame("Void.TYPE is void.class", Void.TYPE, method.getReturnType());
 
     assertNull(method.invoke(this));
   }
 
   /** The rule invokes this method reflectively and checks the result; the body stays empty. */
   @Test
-  public void probeVoidMethod() {}
+  @SuppressWarnings("java:S2699")
+  public void probeVoidMethod() {
+    // Invoked reflectively by InvokingRule; assertions are performed inside the rule's evaluate().
+  }
 }

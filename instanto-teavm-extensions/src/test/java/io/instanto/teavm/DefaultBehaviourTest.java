@@ -24,6 +24,7 @@ import org.teavm.junit.TestPlatform;
 @SkipJVM
 @OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @TeaVMProperties(@TeaVMProperty(key = ThreadLocalChecksPlugin.PROPERTY, value = "false"))
+@SuppressWarnings("java:S1144")
 public class DefaultBehaviourTest {
   @Test
   public void explicitlyDisabledChecksPreserveCallbackBehaviour() {

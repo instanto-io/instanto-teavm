@@ -94,6 +94,7 @@ public final class SuspensionSafeChildren<E> extends AbstractCollection<E> imple
   }
 
   /** Unlinks a cell, re-linking its neighbours so nothing dead is retained. */
+  @SuppressWarnings("java:S3398") // Modifies outer list's structural invariant (head, tail, count)
   private void unlink(Cell<E> cell) {
     if (cell.prev != null) {
       cell.prev.next = cell.next;
