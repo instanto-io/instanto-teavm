@@ -88,6 +88,13 @@ mvn -Pteavm-browser-tests -Dspotless.skip=true \
 matrix, standalone consumers, compiler proposals and limitations.
 [JUnit support](docs/junit-support.md) describes supported rule types and ordering.
 
+The organisation parent supplies JaCoCo coverage reporting. After the build,
+each tested module has `target/site/jacoco/jacoco.xml` for Sonar and an HTML report
+in the same directory. For extensions, open
+`instanto-teavm-extensions/target/site/jacoco/index.html`. This measures JVM
+execution, including compiler extensions exercised while compiling browser tests;
+it does not measure the generated JavaScript or Wasm executing in Chrome.
+
 Publish `instanto-poms` first, then this repository, then its consumers.
 Moving from `teavm-rule-support`, `teavm-classlib-support` or
 `teavm-classlib-compat`? See [the migration guide](docs/consumer-migration.md).
