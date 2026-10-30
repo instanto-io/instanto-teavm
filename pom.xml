@@ -26,4 +26,20 @@
     <module>instanto-teavm-classlib</module>
     <module>instanto-teavm-extensions</module>
   </modules>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>high-priority-analysis-gate</id>
+            <phase>verify</phase>
+            <goals><goal>check</goal></goals>
+            <configuration><failThreshold>High</failThreshold></configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
