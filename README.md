@@ -98,3 +98,10 @@ it does not measure the generated JavaScript or Wasm executing in Chrome.
 Publish `instanto-poms` first, then this repository, then its consumers.
 Moving from `teavm-rule-support`, `teavm-classlib-support` or
 `teavm-classlib-compat`? See [the migration guide](docs/consumer-migration.md).
+
+## Quality
+
+SpotBugs runs on every build. High-priority findings fail the build, and all findings are published to [code scanning](https://github.com/instanto-io/instanto-teavm/security/code-scanning). SonarQube analysis runs on `main` against the organisation's private instance; maintainers see the gate, coverage and issue counts in the workflow summary. The Sonar quality gate is advisory, so a snapshot still publishes when only that gate fails.
+
+See [Actions](https://github.com/instanto-io/instanto-teavm/actions) for the latest verification and quality summary.
+
