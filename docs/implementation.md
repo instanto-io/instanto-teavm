@@ -64,8 +64,9 @@ once. No new runtime instrumentation is added.
 
 This is a local compiler patch, not an upstream backport or a TeaVM plugin hook.
 TeaVM directly constructs this optimization pass. The patch artifact contains
-the original 0.16.0 core with just `ClassInitElimination` and its inner class
-recompiled. Other upstream class files remain byte-for-byte identical. The
+the original 0.16.0 core with `ClassInitElimination` and the virtual-dispatch
+classes described below recompiled, including their inner classes. Other
+upstream class files remain byte-for-byte identical. The
 upstream Maven artifact is not overwritten.
 
 The profile adds the core patch to the standard Maven compiler plugin's
@@ -99,6 +100,79 @@ verification: ADVANCED and FULL can reuse a value from a skipped try path in its
 even when initialization is present. In the explicitly pre-initialized reproducer,
 disabling only `RepeatedFieldReadElimination` restores the correct result.
 Neither pass is disabled by this profile.
+
+## Virtual method selection patch
+
+A private subclass method cannot override an instance method in its superclass.
+Java permits a private method with the same signature as a package-private method
+in a superclass from another package. A call compiled against the superclass must
+still select the superclass method. Static methods likewise cannot be virtual
+overrides. TeaVM 0.16.0's generic implementation lookup can select either as the
+target for a virtual call. The correct base method can then be omitted from the
+output, giving a JavaScript `TypeError: ... is not a function`, or optimization can
+select the wrong implementation.
+
+The full correction retains the original resolved declaration throughout dependency
+analysis and optimization. `VirtualMethodResolver` implements the instance-method
+selection rules in [JVMS 5.4.5–5.4.6](https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-5.html#jvms-5.4.5):
+private/static candidates do not override, package-private declarations are not
+overridden merely by matching signatures in another package, and promotion through
+an intermediate public/protected override is transitive. Private resolved methods
+select their own declaration; abstract declarations suppress inherited bodies;
+default-interface selection retains the maximally specific declaration.
+
+Both dependency analyzers (`VirtualCallConsumer` and `FastVirtualCallConsumer`),
+devirtualization, inlining, and class inference use this selection rule. Ordinary
+method resolution remains unchanged for direct/private/static calls. Overflow
+inference still conservatively over-approximates possible implementations.
+
+Selection alone is insufficient: unrelated methods must also have separate
+runtime slots. Package-private dispatch keys include their declaring package;
+public/protected slots retain the normal signature. A legitimate override supplies
+all inherited slots it implements, including a public method that overrides two
+previously independent declarations. JavaScript emission and the C/legacy-Wasm
+and WasmGC virtual-table builders and call lookup use these keys. The keys are
+internal to dispatch: Java method names, signatures, access levels and reflection
+metadata are not rewritten. The non-minified JavaScript alias provider gives the
+reserved internal keys valid, collision-free JavaScript identifiers.
+
+This supersedes the earlier private/static-only correction, which still selected
+unrelated protected/public/package-private subclass methods. The standalone access
+variants now retain the base implementation for all four subclass access levels.
+The application cleanup (one inherited protected final accessor) remains useful.
+
+`VirtualDispatchTeaVmTest` runs 17 cases on the JVM, normal/minified/optimized
+JavaScript, and normal/optimized WasmGC. Coverage includes private/static calls,
+all cross-package access variants, real same-package/public/protected overrides,
+transitive promotion, package re-entry, two independently inherited package
+methods, interface implementations/defaults, covariant-return bridges, and mixed
+polymorphic receivers. Nine `VirtualMethodResolverTest` cases exercise compiler
+models directly, including abstract/default selection, inherited symbolic
+references, missing declarations, and both virtual-table implementations. A
+binary-compatibility test checks every replacement class against the exact
+upstream jar, guarding against changed method/field descriptors (including TeaVM
+relocation of HPPC collection types). Together with the existing initialization
+regressions, the module has 45 tests.
+
+The consumer fixture independently demonstrates the stock dispatch error
+(`expected 12, got 22`) and tests the packaged compiler through the standard Maven
+plugin with SIMPLE/ADVANCED/FULL optimization, each with minification on and off.
+`src/it/verify-consumer.sh` also retains the stock initialization failure and
+exact-version guard. C/legacy-Wasm tables are tested directly. Normal and optimized
+C output are also
+compiled with Clang and executed on macOS. C call emission, reflection offsets,
+and incremental registration use the same dispatch slots; incremental C and
+legacy Wasm execution are not part of the runtime matrix.
+
+To include native C tests on macOS, add these options to the browser-test build:
+
+```sh
+-Dteavm.junit.c=true \
+-Dteavm.junit.c.compiler="$(pwd)/instanto-teavm-core-patch/src/it/compile-c-macos.sh"
+```
+
+The compiler option names an executable build script, not the compiler binary.
+The script runs inside each generated C test directory.
 
 ## Global call patch
 

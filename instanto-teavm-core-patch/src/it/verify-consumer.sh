@@ -19,6 +19,16 @@ if ! grep -Eq 'NullPointerException|Cannot read properties of null' "$outputs/co
   exit 1
 fi
 
+# Isolate the virtual-dispatch defect from the independent initialization defect.
+mvn -B -q -f "$fixture/pom.xml" "$@" -Dspotless.skip=true \
+  -Dinstanto.teavm.stockCompiler -DskipTests -Dfixture.mainClass=example.DispatchApplication \
+  "-Dfixture.outputDirectory=$outputs/dispatch-stock" package
+if node "$fixture/check.mjs" "$outputs/dispatch-stock/app.mjs" > "$outputs/dispatch-stock.log" 2>&1; then
+  echo 'Expected stock TeaVM virtual dispatch to fail.' >&2
+  exit 1
+fi
+grep -q 'Dispatch: expected 12, got 22' "$outputs/dispatch-stock.log"
+
 for optimization in SIMPLE ADVANCED FULL; do
   for minifying in false true; do
     args=(-DskipTests)

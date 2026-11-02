@@ -15,7 +15,7 @@
   <artifactId>instanto-teavm-core-patch</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <name>Instanto TeaVM Core Patch</name>
-  <description>TeaVM 0.16.0 core with exception-safe class initialization elimination.</description>
+  <description>TeaVM 0.16.0 core with exception-safe class initialization elimination and virtual method selection fixes.</description>
   <properties>
     <!-- This is an exact upstream binary baseline, not a consumer override. -->
     <patched.teavm.version>0.16.0</patched.teavm.version>
@@ -60,7 +60,7 @@
                   <groupId>org.teavm</groupId><artifactId>teavm-core</artifactId>
                   <version>${patched.teavm.version}</version>
                   <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                  <excludes>org/teavm/model/optimization/ClassInitElimination*.class</excludes>
+                  <excludes>org/teavm/model/optimization/ClassInitElimination*.class,org/teavm/dependency/VirtualCallConsumer*.class,org/teavm/dependency/FastVirtualCallConsumer*.class,org/teavm/model/optimization/Devirtualization*.class,org/teavm/model/optimization/Inlining.class,org/teavm/model/optimization/Inlining$*.class,org/teavm/model/analysis/ClassInference*.class,org/teavm/backend/javascript/rendering/Renderer.class,org/teavm/backend/javascript/rendering/Renderer$*.class,org/teavm/backend/javascript/rendering/StatementRenderer.class,org/teavm/backend/javascript/rendering/StatementRenderer$*.class,org/teavm/backend/javascript/codegen/DefaultAliasProvider.class,org/teavm/backend/javascript/codegen/DefaultAliasProvider$*.class,org/teavm/model/classes/VirtualTableBuilder.class,org/teavm/model/classes/VirtualTableBuilder$*.class,org/teavm/model/classes/VirtualTableProvider.class,org/teavm/model/classes/VirtualTableProvider$*.class,org/teavm/backend/wasm/vtable/WasmGCVirtualTableBuilder.class,org/teavm/backend/wasm/vtable/WasmGCVirtualTableBuilder$*.class,org/teavm/backend/wasm/vtable/WasmGCVirtualTableProvider.class,org/teavm/backend/wasm/vtable/WasmGCVirtualTableProvider$*.class,org/teavm/backend/wasm/generate/methods/WasmGCVirtualCallGenerator.class,org/teavm/backend/wasm/generate/methods/WasmGCVirtualCallGenerator$*.class,org/teavm/backend/c/generate/CodeGenerationVisitor.class,org/teavm/backend/c/generate/CodeGenerationVisitor$*.class,org/teavm/backend/c/generate/ClassGenerator.class,org/teavm/backend/c/generate/ClassGenerator$*.class,org/teavm/backend/c/generate/ClassReflectionGenerator.class,org/teavm/backend/c/generate/ClassReflectionGenerator$*.class</excludes>
                 </artifactItem>
               </artifactItems>
             </configuration>
@@ -77,6 +77,7 @@
         <teavm.junit.wasm-gc>true</teavm.junit.wasm-gc>
         <teavm.junit.optimized>true</teavm.junit.optimized>
         <teavm.junit.minified>true</teavm.junit.minified>
+        <teavm.junit.c>false</teavm.junit.c>
       </properties>
       <build><plugins><plugin>
         <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId>
@@ -84,7 +85,7 @@
           <teavm.junit.target>${project.build.directory}/teavm-tests</teavm.junit.target>
           <teavm.junit.js>${teavm.junit.js}</teavm.junit.js>
           <teavm.junit.wasm-gc>${teavm.junit.wasm-gc}</teavm.junit.wasm-gc>
-          <teavm.junit.c>false</teavm.junit.c>
+          <teavm.junit.c>${teavm.junit.c}</teavm.junit.c>
           <teavm.junit.optimized>${teavm.junit.optimized}</teavm.junit.optimized>
           <teavm.junit.minified>${teavm.junit.minified}</teavm.junit.minified>
           <teavm.junit.js.runner>browser-chrome</teavm.junit.js.runner>

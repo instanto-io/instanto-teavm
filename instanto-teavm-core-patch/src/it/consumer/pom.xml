@@ -10,6 +10,7 @@
   <version>1.0-SNAPSHOT</version>
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>
+    <fixture.mainClass>example.InitializationApplication</fixture.mainClass>
     <fixture.optimization>SIMPLE</fixture.optimization>
     <fixture.minifying>false</fixture.minifying>
     <fixture.outputDirectory>${project.build.directory}/teavm</fixture.outputDirectory>
@@ -25,7 +26,7 @@
   <build><plugins><plugin>
     <groupId>org.teavm</groupId><artifactId>teavm-maven-plugin</artifactId>
     <configuration>
-      <mainClass>example.InitializationApplication</mainClass>
+      <mainClass>${fixture.mainClass}</mainClass>
       <targetType>JAVASCRIPT</targetType><jsModuleType>ES2015</jsModuleType>
       <optimizationLevel>${fixture.optimization}</optimizationLevel>
       <minifying>${fixture.minifying}</minifying>
