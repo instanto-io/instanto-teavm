@@ -68,6 +68,8 @@ inherits `instanto-teavm-pom` uses them unless it opts out.
 Three additional compiler fixes are retained under `upstream-fixes` as review
 proposals. Normal builds do not apply them. Their reproducers and patches are
 centralised here so they can be reviewed and submitted upstream independently.
+[`teavm-issues`](teavm-issues/README.md) lists every TeaVM fault this repository
+fixes or works around, its state upstream, and drafts of the reports still to file.
 
 GWT, Elemental and JSInterop adaptation remains in
 [teavm-compat](https://github.com/instanto-io/teavm-compat). Sarto-specific code
