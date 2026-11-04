@@ -244,9 +244,53 @@ python3 upstream-fixes/verify.py --teavm-source ../teavm --case timer --level FU
 ```
 
 The same tests run against the packaged artifact in
-`instanto-teavm-jso-patch`. Varargs of Java callbacks are a separate matter:
-TeaVM passes the elements of a varargs array as wrapped Java objects rather than
-JavaScript functions, so a global expecting functions cannot call them.
+`instanto-teavm-jso-patch`.
+
+## Callback array patch
+
+TeaVM 0.16.0 turns a Java lambda into a JavaScript function when it is passed
+as a single `@JSFunctor` argument, and turns a returned function back into a
+callable functor. It does neither for the elements of an array or varargs
+parameter of a functor type. The code compiles without a warning; at run time
+JavaScript receives Java objects and fails with `... is not a function`, and
+Java receives functions it cannot call. A wrapper for a JavaScript library that
+takes several handlers at once, such as a router's
+`page(path, requireLogin, loadUser, showUser)`, is the natural way to hit it.
+
+### Where the fault lies
+
+`JSValueMarshaller.wrapArgument` and `unwrapReturnValue` apply the functor
+conversion only when the type is the functor interface itself. An array of a
+functor type falls through to the general array conversion, which copies the
+elements unchanged; a varargs parameter can be passed as the Java array's
+backing data without any conversion. TeaVM's answer to a related report,
+[konsoletyper/teavm#504](https://github.com/konsoletyper/teavm/issues/504), is
+that conversion needs the functor type in the method signature. Here it is in
+the signature, as the array's element type.
+
+### The correction
+
+`instanto-teavm-jso-patch` also recompiles `JSValueMarshaller` and `JS` from
+[functor-array.patch](../upstream-fixes/patches/functor-array.patch). When an
+array's element type is a proper functor, wrapping calls the new
+`JS.wrapFunctors`, which makes each element a function exactly as a single
+argument is converted, before the by-reference shortcut used for varargs.
+Unwrapping calls `JS.unwrapFunctors`, which makes each returned function a
+functor. Null elements stay null, and other arrays are unchanged.
+
+### Reproducer
+
+[`FunctorArrayTest`](../upstream-fixes/src/test/java/example/FunctorArrayTest.java)
+passes callbacks to an ordinary JavaScript object, so the global call fault does
+not interfere. On stock 0.16.0, varargs, an array argument, a `@JSBody` array
+parameter and a returned array of functions fail on JavaScript and Wasm GC at
+SIMPLE and FULL; a single callback passes in both directions. With the patch
+all six pass:
+
+```sh
+python3 upstream-fixes/verify.py --teavm-source ../teavm --case functor-array --stock --level FULL
+python3 upstream-fixes/verify.py --teavm-source ../teavm --case functor-array --level FULL
+```
 
 ## Compiler fix proposals for review
 
@@ -264,6 +308,7 @@ checkout. These are tested candidates, not upstream-approved changes.
 | Global timer calls become null member calls | Lower JS global calls explicitly to function calls before optimization, with distinct fixed-arity and varargs operations. Preserve strict `this` semantics; leave module, instance and Wasm lowering on their existing paths. | [timer.patch](../upstream-fixes/patches/timer.patch) |
 | JSBody parameter name capture | When a generated parameter name collides with a script identifier, copy it into a fresh alias chosen against all script identifiers and generated parameter names. This adds a local assignment, not a wrapper call. | [minifier.patch](../upstream-fixes/patches/minifier.patch) |
 | Invalid Wasm local after promise suspension | Make the temporary used by the non-native cast check nullable in suspendable methods, matching coroutine restoration requirements. | [wasm.patch](../upstream-fixes/patches/wasm.patch) |
+| Callbacks in arrays and varargs are not converted | Convert each element of an array of a functor type as a single functor is converted, in both directions, before the varargs by-reference shortcut. Packaged in `instanto-teavm-jso-patch`. | [functor-array.patch](../upstream-fixes/patches/functor-array.patch) |
 
 The combined fixture passes **32 JUnit tests at each of SIMPLE, ADVANCED and
 FULL**. Browser cases run on JS with minification off/on and Wasm GC where

@@ -7,5 +7,7 @@ Upstream: https://github.com/konsoletyper/teavm/tree/0.16.0
 JS.java, JSClassProcessor.java and JSNativeInjector.java are modified so a call
 to a @JSTopLevel function is lowered to a plain global function call when the
 JavaScript is generated, rather than to a member call on a null receiver that
-an optimised build can leave in a variable. All other upstream class files are
-included unchanged.
+an optimised build can leave in a variable. JS.java and JSValueMarshaller.java
+are modified so each element of an array of a @JSFunctor type is converted to
+and from a JavaScript function, as a single functor is. All other upstream
+class files are included unchanged.

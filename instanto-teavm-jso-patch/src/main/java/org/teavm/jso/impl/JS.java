@@ -499,6 +499,41 @@ public final class JS {
     return result;
   }
 
+  /**
+   * An array of Java functor implementations as a JavaScript array of functions, as a single
+   * functor argument becomes a function. {@code method} names the functor's method.
+   */
+  public static JSObject wrapFunctors(Object[] array, JSObject method) {
+    if (array == null) {
+      return null;
+    }
+    var result = new JSArray<JSObject>(array.length);
+    for (int i = 0; i < array.length; ++i) {
+      var item = array[i];
+      result.set(i, item != null ? function(JSWrapper.unwrap(item), method) : null);
+    }
+    return result;
+  }
+
+  /**
+   * A JavaScript array of functions as a Java array of functors, as a single function becomes a
+   * functor. {@code method} names the functor's method.
+   */
+  @SuppressWarnings("unchecked")
+  public static <T extends JSObject> T[] unwrapFunctors(
+      Class<T> type, JSObject array, JSObject method) {
+    if (array == null) {
+      return null;
+    }
+    var functions = (JSArrayReader<JSObject>) array;
+    T[] result = (T[]) Array.newInstance(type, functions.getLength());
+    for (int i = 0; i < result.length; ++i) {
+      var item = functions.get(i);
+      result[i] = item != null ? (T) functionAsObject(item, method) : null;
+    }
+    return result;
+  }
+
   public static <T extends JSObject> UnwrapFunction<JSArrayReader<T>, T[]> arrayUnwrapper(
       Class<T> type) {
     return array -> unwrapArray(type, array);

@@ -1,0 +1,154 @@
+diff -ruN a/jso/impl/src/main/java/org/teavm/jso/impl/JS.java b/jso/impl/src/main/java/org/teavm/jso/impl/JS.java
+--- a/jso/impl/src/main/java/org/teavm/jso/impl/JS.java
++++ b/jso/impl/src/main/java/org/teavm/jso/impl/JS.java
+@@ -491,6 +491,40 @@
+         return result;
+     }
+ 
++    /**
++     * An array of Java functor implementations as a JavaScript array of functions, as a single functor
++     * argument becomes a function. {@code method} names the functor's method.
++     */
++    public static JSObject wrapFunctors(Object[] array, JSObject method) {
++        if (array == null) {
++            return null;
++        }
++        var result = new JSArray<JSObject>(array.length);
++        for (int i = 0; i < array.length; ++i) {
++            var item = array[i];
++            result.set(i, item != null ? function(JSWrapper.unwrap(item), method) : null);
++        }
++        return result;
++    }
++
++    /**
++     * A JavaScript array of functions as a Java array of functors, as a single function becomes a
++     * functor. {@code method} names the functor's method.
++     */
++    @SuppressWarnings("unchecked")
++    public static <T extends JSObject> T[] unwrapFunctors(Class<T> type, JSObject array, JSObject method) {
++        if (array == null) {
++            return null;
++        }
++        var functions = (JSArrayReader<JSObject>) array;
++        T[] result = (T[]) Array.newInstance(type, functions.getLength());
++        for (int i = 0; i < result.length; ++i) {
++            var item = functions.get(i);
++            result[i] = item != null ? (T) functionAsObject(item, method) : null;
++        }
++        return result;
++    }
++
+     public static <T extends JSObject> UnwrapFunction<JSArrayReader<T>, T[]> arrayUnwrapper(Class<T> type) {
+         return array -> unwrapArray(type, array);
+     }
+diff -ruN a/jso/impl/src/main/java/org/teavm/jso/impl/JSValueMarshaller.java b/jso/impl/src/main/java/org/teavm/jso/impl/JSValueMarshaller.java
+--- a/jso/impl/src/main/java/org/teavm/jso/impl/JSValueMarshaller.java
++++ b/jso/impl/src/main/java/org/teavm/jso/impl/JSValueMarshaller.java
+@@ -26,6 +26,7 @@
+ import org.teavm.jso.JSClass;
+ import org.teavm.jso.JSFunctor;
+ import org.teavm.jso.JSModule;
++import org.teavm.jso.JSObject;
+ import org.teavm.model.AnnotationContainerReader;
+ import org.teavm.model.CallLocation;
+ import org.teavm.model.ClassHierarchy;
+@@ -47,6 +48,12 @@
+ import org.teavm.model.instructions.StringConstantInstruction;
+ 
+ class JSValueMarshaller {
++    private static final ValueType JS_OBJECT_TYPE = ValueType.object(JSObject.class.getName());
++    private static final MethodReference WRAP_FUNCTORS = new MethodReference(JS.class.getName(), "wrapFunctors",
++            ValueType.parse(Object[].class), JS_OBJECT_TYPE, JS_OBJECT_TYPE);
++    private static final MethodReference UNWRAP_FUNCTORS = new MethodReference(JS.class.getName(), "unwrapFunctors",
++            ValueType.parse(Class.class), JS_OBJECT_TYPE, JS_OBJECT_TYPE, ValueType.parse(JSObject[].class));
++
+     private static final MethodReference JS_TO_JAVA = new MethodReference(JS_WRAPPER_CLASS, "jsToJava",
+             JS_OBJECT, OBJECT);
+     private static final MethodReference LIGHTWEIGHT_JS_TO_JAVA = new MethodReference(JS_WRAPPER_CLASS,
+@@ -91,6 +98,53 @@
+                 .count() == 1;
+     }
+ 
++    /**
++     * The functor interface an array type holds directly, or null. Each element of such an array must
++     * cross into and out of JavaScript the way a single functor does, as a function.
++     */
++    private ClassReader functorArrayItem(ValueType type) {
++        if (!(type instanceof ValueType.Array)) {
++            return null;
++        }
++        var itemType = ((ValueType.Array) type).getItemType();
++        if (!(itemType instanceof ValueType.Object)) {
++            return null;
++        }
++        var cls = classSource.get(((ValueType.Object) itemType).getClassName());
++        if (cls == null || cls.getAnnotations().get(JSFunctor.class.getName()) == null || !isProperFunctor(cls)) {
++            return null;
++        }
++        return cls;
++    }
++
++    private Variable convertFunctorArray(Variable var, ClassReader functor, TextLocation location,
++            MethodReference method, ValueType itemType) {
++        String name = functor.getMethods().stream()
++                .filter(m -> m.hasModifier(ElementModifier.ABSTRACT))
++                .findFirst().get().getName();
++        Variable nameVar = addStringWrap(addString(name, location), location);
++        List<Variable> args = new ArrayList<>();
++        if (itemType != null) {
++            Variable cls = program.createVariable();
++            var clsInsn = new ClassConstantInstruction();
++            clsInsn.setConstant(JSClassProcessor.processType(typeHelper, itemType));
++            clsInsn.setLocation(location);
++            clsInsn.setReceiver(cls);
++            replacement.add(clsInsn);
++            args.add(cls);
++        }
++        args.add(var);
++        args.add(nameVar);
++        InvokeInstruction insn = new InvokeInstruction();
++        insn.setType(InvocationType.SPECIAL);
++        insn.setMethod(method);
++        insn.setArguments(args.toArray(new Variable[0]));
++        insn.setReceiver(program.createVariable());
++        insn.setLocation(location);
++        replacement.add(insn);
++        return insn.getReceiver();
++    }
++
+     private Variable wrapFunctor(CallLocation location, Variable var, ClassReader type, JSType jsType) {
+         if (!isProperFunctor(type)) {
+             diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
+@@ -125,6 +179,10 @@
+ 
+     Variable wrap(Variable var, ValueType type, JSType jsType, TextLocation location, boolean byRef,
+             JSBufferType bufferType) {
++        var functorItem = functorArrayItem(type);
++        if (functorItem != null) {
++            return convertFunctorArray(var, functorItem, location, WRAP_FUNCTORS, null);
++        }
+         if (byRef) {
+             InvokeInstruction insn = new InvokeInstruction();
+             insn.setMethod(JSMethods.ARRAY_DATA);
+@@ -380,7 +438,7 @@
+ 
+     Variable unwrapReturnValue(CallLocation location, Variable var, ValueType type, boolean byRef,
+             boolean strictJava) {
+-        if (byRef) {
++        if (byRef && functorArrayItem(type) == null) {
+             return unwrapByRef(location, var, type);
+         }
+ 
+@@ -490,6 +548,11 @@
+     }
+ 
+     private Variable unwrapArray(CallLocation location, Variable var, ValueType.Array type) {
++        var functorItem = functorArrayItem(type);
++        if (functorItem != null) {
++            return convertFunctorArray(var, functorItem, location.getSourceLocation(), UNWRAP_FUNCTORS,
++                    type.getItemType());
++        }
+         ValueType itemType = type;
+         int degree = 0;
+         while (itemType instanceof ValueType.Array) {

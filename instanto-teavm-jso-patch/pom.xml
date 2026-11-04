@@ -57,7 +57,7 @@
                   <groupId>org.teavm</groupId><artifactId>teavm-jso-impl</artifactId>
                   <version>${patched.teavm.version}</version>
                   <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                  <excludes>org/teavm/jso/impl/JS.class,org/teavm/jso/impl/JS$*.class,org/teavm/jso/impl/JSClassProcessor.class,org/teavm/jso/impl/JSClassProcessor$*.class,org/teavm/jso/impl/JSNativeInjector.class,org/teavm/jso/impl/JSNativeInjector$*.class</excludes>
+                  <excludes>org/teavm/jso/impl/JS.class,org/teavm/jso/impl/JS$*.class,org/teavm/jso/impl/JSClassProcessor.class,org/teavm/jso/impl/JSClassProcessor$*.class,org/teavm/jso/impl/JSNativeInjector.class,org/teavm/jso/impl/JSNativeInjector$*.class,org/teavm/jso/impl/JSValueMarshaller.class,org/teavm/jso/impl/JSValueMarshaller$*.class</excludes>
                 </artifactItem>
               </artifactItems>
             </configuration>

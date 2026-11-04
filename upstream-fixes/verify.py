@@ -20,6 +20,7 @@ CASES = {
     "timer": ["TimerTest", "GlobalInvocationTest", "TopLevelReceiverTest"],
     "minifier": ["MinifierCaptureTest", "TopLevelCollisionTest"],
     "wasm": ["PromiseTest", "PromiseVariantsTest"],
+    "functor-array": ["FunctorArrayTest"],
 }
 BASELINE = "0.16.0"
 

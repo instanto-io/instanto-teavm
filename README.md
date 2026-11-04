@@ -12,7 +12,7 @@ It provides four things:
 | `instanto-teavm-classlib` | Supplies missing Java methods and corrects some handling of Unicode characters and of `ConcurrentHashMap`. | Code compiled by TeaVM needs `String.lines()`, `Character.getDirectionality()`, the code-point corrections, or `ConcurrentHashMap.computeIfAbsent`/`computeIfPresent` leaving a key unmapped when the function returns `null`. |
 | `instanto-teavm-extensions` | Makes ordinary JUnit rules work in compiled tests, fixes repeated setup/cleanup, and can detect unsafe ThreadLocal access from browser callbacks. | TeaVM tests use JUnit rules or need the lifecycle fix. Enable callback diagnostics separately when wanted. |
 | `instanto-teavm-core-patch` | Corrects compiler faults in class initialization after exceptions and virtual dispatch across Java access levels and package boundaries. | Applied by `instanto-teavm-pom` to every build; opt out with `-Dinstanto.teavm.stockCompiler`. |
-| `instanto-teavm-jso-patch` | Corrects a TeaVM compiler fault that turns calls to `@JSTopLevel` functions, such as `Window.setTimeout`, into calls on `null` in optimised JavaScript. | Applied with the core patch. |
+| `instanto-teavm-jso-patch` | Corrects two TeaVM faults in calls to JavaScript: calls to `@JSTopLevel` functions, such as `Window.setTimeout`, made on `null` in optimised JavaScript, and Java callbacks in arrays or varargs reaching JavaScript as objects rather than functions. | Applied with the core patch. |
 
 The supported baseline is **TeaVM 0.16.0 with Java 21**. Applications keep
 using TeaVM's standard Maven plugin. These artifacts have no Sarto runtime
