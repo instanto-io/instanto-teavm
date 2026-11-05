@@ -14,6 +14,10 @@
   <packaging>pom</packaging>
   <name>Instanto TeaVM</name>
   <description>TeaVM class-library additions, compiler extensions and the patched core, built on instanto-teavm-pom.</description>
+
+  <properties>
+    <instanto.repository>instanto-teavm</instanto.repository>
+  </properties>
   <scm>
     <url>https://github.com/instanto-io/instanto-teavm</url>
     <connection>scm:git:https://github.com/instanto-io/instanto-teavm.git</connection>

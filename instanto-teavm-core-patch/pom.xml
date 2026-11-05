@@ -17,6 +17,7 @@
   <name>Instanto TeaVM Core Patch</name>
   <description>TeaVM 0.16.0 core with exception-safe class initialization elimination and virtual method selection fixes.</description>
   <properties>
+    <instanto.repository>instanto-teavm</instanto.repository>
     <!-- This is an exact upstream binary baseline, not a consumer override. -->
     <patched.teavm.version>0.16.0</patched.teavm.version>
   </properties>

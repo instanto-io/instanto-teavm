@@ -17,6 +17,7 @@
   <name>Instanto TeaVM JSO Patch</name>
   <description>TeaVM 0.16.0 JSO implementation that calls @JSTopLevel functions as plain global calls.</description>
   <properties>
+    <instanto.repository>instanto-teavm</instanto.repository>
     <!-- This is an exact upstream binary baseline, not a consumer override. -->
     <patched.teavm.version>0.16.0</patched.teavm.version>
   </properties>
