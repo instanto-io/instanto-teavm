@@ -12,19 +12,23 @@ permissions:
 
 jobs:
   verify:
+    if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || github.event_name == 'workflow_dispatch'
     uses: instanto-io/instanto-poms/.github/workflows/maven-build.yml@main
     with:
       name: Verify JVM, JavaScript and Wasm GC
       goals: clean verify
       maven-args: -Pteavm-browser-tests -Dspotless.skip=true -Dinstanto.teavm.threadLocalChecks=true
+      downstream-checks: false
+      sonar: false
     secrets: inherit
 
   publish-snapshot:
-    if: github.repository == 'instanto-io/instanto-teavm' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: [verify]
+    if: github.repository == 'instanto-io/instanto-teavm' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: instanto-io/instanto-poms/.github/workflows/maven-build.yml@main
     with:
       name: Publish Maven snapshot
       goals: deploy
-      maven-args: -DskipTests -Dspotless.skip=true
+      fast-deploy: true
+      downstream-checks: false
+      sonar: false
     secrets: inherit
