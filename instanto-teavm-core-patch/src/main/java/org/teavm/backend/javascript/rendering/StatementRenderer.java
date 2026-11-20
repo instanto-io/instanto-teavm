@@ -17,7 +17,6 @@ package org.teavm.backend.javascript.rendering;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -1409,9 +1408,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     }
     writer.append("[");
     boolean first = true;
-    List<Expr> dimensions = new ArrayList<>(expr.getDimensions());
-    Collections.reverse(dimensions);
-    for (Expr dimension : dimensions) {
+    for (Expr dimension : expr.getDimensions().reversed()) {
       if (!first) {
         writer.append(",").ws();
       }
