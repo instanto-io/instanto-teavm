@@ -75,10 +75,18 @@ import org.teavm.runtime.reflect.ClassInfo;
 import org.teavm.runtime.reflect.ClassReflectionInfo;
 
 public class ClassGenerator {
+  private static final String JAVA_LANG_OBJECT = "java.lang.Object";
+  private static final String REFLECTION_H = "reflection.h";
+  private static final String JAVA_LANG_CLASS = "java.lang.Class";
+  private static final String EXTERN = "extern ";
+  private static final String TEA_VM_CLASS = "TeaVM_Class";
+  private static final String PARENT_SUFFIX = ".parent = {";
+  private static final String TEA_VM_CLASS_TEXT = "(TeaVM_Class*) &";
+
   private static final Set<String> classesWithDeclaredStructures =
       new HashSet<>(
           Arrays.asList(
-              "java.lang.Object",
+              JAVA_LANG_OBJECT,
               "java.lang.String",
               RuntimeArray.class.getName(),
               RuntimeClass.class.getName(),
@@ -153,7 +161,7 @@ public class ClassGenerator {
     } else {
       writer.println("typedef struct {").indent();
       for (var method : fields) {
-        includes.includePath("reflection.h");
+        includes.includePath(REFLECTION_H);
         var fieldName =
             context.getNames().forMemberField(new FieldReference(cls.getName(), method.getName()));
         generateAnnotationFieldType(context, includes, writer, method.getResultType());
@@ -181,7 +189,7 @@ public class ClassGenerator {
     if (type instanceof ValueType.Array) {
       var itemType = ((ValueType.Array) type).getItemType();
       if (itemType instanceof ValueType.Primitive) {
-        includes.includePath("reflection.h");
+        includes.includePath(REFLECTION_H);
         switch (((ValueType.Primitive) itemType).getKind()) {
           case BOOLEAN:
           case BYTE:
@@ -207,9 +215,9 @@ public class ClassGenerator {
             break;
         }
       } else if (itemType instanceof ValueType.Object) {
-        includes.includePath("reflection.h");
+        includes.includePath(REFLECTION_H);
         var name = ((ValueType.Object) itemType).getClassName();
-        if (name.equals("java.lang.Class")) {
+        if (name.equals(JAVA_LANG_CLASS)) {
           writer.print("TeaVM_ClassArray*");
           return;
         }
@@ -248,8 +256,8 @@ public class ClassGenerator {
       }
     } else if (type instanceof ValueType.Object) {
       var name = ((ValueType.Object) type).getClassName();
-      if (name.equals("java.lang.Class")) {
-        includes.includePath("reflection.h");
+      if (name.equals(JAVA_LANG_CLASS)) {
+        includes.includePath(REFLECTION_H);
         writer.print("TeaVM_ClassPtr");
         return;
       }
@@ -454,7 +462,7 @@ public class ClassGenerator {
       return;
     }
     boolean isStatic = method.hasModifier(ElementModifier.STATIC);
-    headerWriter.print("extern ");
+    headerWriter.print(EXTERN);
     CodeGenerator.generateMethodSignature(
         headerWriter, context.getNames(), method.getReference(), isStatic, false);
     headerWriter.println(";");
@@ -552,8 +560,7 @@ public class ClassGenerator {
   }
 
   private boolean isMonitorField(FieldReference field) {
-    return field.getClassName().equals("java.lang.Object")
-        && field.getFieldName().equals("monitor");
+    return field.getClassName().equals(JAVA_LANG_OBJECT) && field.getFieldName().equals("monitor");
   }
 
   private boolean isBufferNextField(FieldReference field) {
@@ -571,7 +578,7 @@ public class ClassGenerator {
       }
       String fieldName = context.getNames().forStaticField(field.getReference());
       headerWriter
-          .print("extern ")
+          .print(EXTERN)
           .printStrictType(field.getType())
           .print(" ")
           .print(fieldName)
@@ -635,18 +642,18 @@ public class ClassGenerator {
         generateVirtualTableStructure(className);
       }
     } else if (type instanceof ValueType.Array) {
-      className = "java.lang.Object";
+      className = JAVA_LANG_OBJECT;
     }
     ClassReader cls = className != null ? context.getClassSource().get(className) : null;
 
     String structName;
     if (context.isIncremental()) {
-      structName = className != null ? "TeaVM_DynamicClass" : "TeaVM_Class";
+      structName = className != null ? "TeaVM_DynamicClass" : TEA_VM_CLASS;
     } else {
       structName =
           className != null && (cls == null || !cls.hasModifier(ElementModifier.INTERFACE))
               ? context.getNames().forClassClass(className)
-              : "TeaVM_Class";
+              : TEA_VM_CLASS;
     }
     if (className != null && !context.isIncremental()) {
       headerIncludes.includeClass(className);
@@ -663,7 +670,7 @@ public class ClassGenerator {
       }
     }
 
-    headerWriter.print("extern ").print(structName).print(" ").print(name).println(";");
+    headerWriter.print(EXTERN).print(structName).print(" ").print(name).println(";");
     if (classLayout != null) {
       codeWriter.println(
           "static int16_t teavm_classLayouts_" + name + "[" + (classLayout.length + 1) + "];");
@@ -693,7 +700,7 @@ public class ClassGenerator {
           }
         } else {
           codeWriter.println(" = {").indent();
-          codeWriter.println(".parent = {").indent();
+          codeWriter.println(PARENT_SUFFIX).indent();
           generateRuntimeClassInitializer(type, enumConstants, false, 0);
           codeWriter.outdent().println("}");
           codeWriter.outdent().println("}");
@@ -736,7 +743,7 @@ public class ClassGenerator {
   }
 
   private void generateDynamicVirtualTable(String name, ValueType type, String enumConstants) {
-    codeWriter.println(".parent = {").indent();
+    codeWriter.println(PARENT_SUFFIX).indent();
     generateRuntimeClassInitializer(type, enumConstants, false, 0);
     codeWriter.outdent().println("}");
 
@@ -758,7 +765,7 @@ public class ClassGenerator {
         parentClasses = new String[0];
       }
     } else {
-      parentClasses = new String[] {"java.lang.Object"};
+      parentClasses = new String[] {JAVA_LANG_OBJECT};
     }
 
     for (String parentClass : parentClasses) {
@@ -776,12 +783,12 @@ public class ClassGenerator {
       boolean initMethod,
       int depth) {
     if (!initMethod) {
-      codeWriter.println(".parent = {").indent();
+      codeWriter.println(PARENT_SUFFIX).indent();
     } else {
       String parentStructName =
           current.getParent() != null
               ? context.getNames().forClassClass(current.getParent().getClassName())
-              : "TeaVM_Class";
+              : TEA_VM_CLASS;
       initWriter
           .print(parentStructName)
           .print("* vt_")
@@ -897,7 +904,7 @@ public class ClassGenerator {
       if (cls != null && cls.getParent() != null && !cls.hasModifier(ElementModifier.INTERFACE)) {
         includes.includeClass(cls.getParent());
         parent =
-            "(TeaVM_Class*) &"
+            TEA_VM_CLASS_TEXT
                 + context.getNames().forClassInstance(ValueType.object(cls.getParent()));
       } else {
         parent = "NULL";
@@ -923,7 +930,7 @@ public class ClassGenerator {
           }
           first = false;
           includes.includeClass(itf);
-          sb.append("(TeaVM_Class*) &")
+          sb.append(TEA_VM_CLASS_TEXT)
               .append(context.getNames().forClassInstance(ValueType.object(itf)));
         }
         superinterfaces = sb.append(" }").toString();
@@ -938,7 +945,7 @@ public class ClassGenerator {
             && cls.getDeclaringClassName() != null
             && context.getDependencies().getClass(cls.getDeclaringClassName()) != null) {
           declaringClass =
-              "(TeaVM_Class*) &"
+              TEA_VM_CLASS_TEXT
                   + context
                       .getNames()
                       .forClassInstance(ValueType.object(cls.getDeclaringClassName()));
@@ -949,22 +956,22 @@ public class ClassGenerator {
             && cls.getOwnerName() != null
             && context.getDependencies().getClass(cls.getOwnerName()) != null) {
           enclosingClass =
-              "(TeaVM_Class*) &"
+              TEA_VM_CLASS_TEXT
                   + context.getNames().forClassInstance(ValueType.object(cls.getOwnerName()));
           includes.includeClass(cls.getOwnerName());
         }
       }
 
     } else if (type instanceof ValueType.Array) {
-      includes.includeClass("java.lang.Object");
+      includes.includeClass(JAVA_LANG_OBJECT);
       parent =
-          "(TeaVM_Class*) &"
-              + context.getNames().forClassInstance(ValueType.object("java.lang.Object"));
-      tag = !context.isIncremental() ? tagRegistry.getRanges("java.lang.Object").get(0).lower : 0;
+          TEA_VM_CLASS_TEXT
+              + context.getNames().forClassInstance(ValueType.object(JAVA_LANG_OBJECT));
+      tag = !context.isIncremental() ? tagRegistry.getRanges(JAVA_LANG_OBJECT).get(0).lower : 0;
       ValueType itemType = ((ValueType.Array) type).getItemType();
       sizeExpr = "sizeof(" + CodeWriter.strictTypeAsString(itemType) + ")";
       includes.includeType(itemType);
-      itemTypeExpr = "(TeaVM_Class*) &" + context.getNames().forClassInstance(itemType);
+      itemTypeExpr = TEA_VM_CLASS_TEXT + context.getNames().forClassInstance(itemType);
     } else if (type == ValueType.VOID) {
       parent = "NULL";
       tag = 0;
@@ -992,7 +999,7 @@ public class ClassGenerator {
     String arrayTypeExpr;
     if (type instanceof ValueType.Primitive && types.contains(arrayType)) {
       includes.includeType(arrayType);
-      arrayTypeExpr = "(TeaVM_Class*) &" + context.getNames().forClassInstance(arrayType);
+      arrayTypeExpr = TEA_VM_CLASS_TEXT + context.getNames().forClassInstance(arrayType);
     } else {
       arrayTypeExpr = "NULL";
     }
@@ -1199,7 +1206,7 @@ public class ClassGenerator {
   private List<HeapDumpField> getHeapDumpFields(ClassReader cls) {
     List<HeapDumpField> fields = new ArrayList<>();
     switch (cls.getName()) {
-      case "java.lang.Object":
+      case JAVA_LANG_OBJECT:
       case "java.lang.ref.ReferenceQueue":
       case "java.lang.ref.WeakReference":
       case "java.lang.ref.SoftReference":
@@ -1233,8 +1240,8 @@ public class ClassGenerator {
   private List<HeapDumpField> getHeapDumpStaticFields(ClassReader cls) {
     List<HeapDumpField> fields = new ArrayList<>();
     switch (cls.getName()) {
-      case "java.lang.Object":
-      case "java.lang.Class":
+      case JAVA_LANG_OBJECT:
+      case JAVA_LANG_CLASS:
       case "java.lang.ref.ReferenceQueue":
       case "java.lang.ref.Reference":
       case "java.lang.ref.WeakReference":
@@ -1295,7 +1302,7 @@ public class ClassGenerator {
     } else if (type instanceof ValueType.Array) {
       result = "TEAVM_FIELD_TYPE_ARRAY";
     } else {
-      result = "TEAVM_FIELD_TYPE_OBJECT";
+      result = TYPE_OBJECT;
     }
     return result;
   }
@@ -1319,7 +1326,7 @@ public class ClassGenerator {
 
     VirtualTable virtualTable = context.getVirtualTableProvider().lookup(className);
     if (virtualTable != null) {
-      String parentName = "TeaVM_Class";
+      String parentName = TEA_VM_CLASS;
       int index = 0;
       if (virtualTable.getParent() != null) {
         headerIncludes.includeClass(virtualTable.getParent().getClassName());
