@@ -46,6 +46,11 @@ import org.teavm.runtime.reflect.ParameterInfo;
 import org.teavm.runtime.reflect.TypeVariableInfo;
 
 class ClassReflectionGenerator {
+  private static final String REFLECTION_H = "reflection.h";
+  private static final String COUNT_SUFFIX = ".count = ";
+  private static final String DATA_SUFFIX = ".data = ";
+  private static final String STDDEF_H = "<stddef.h>";
+
   private GenerationContext context;
   private CodeWriter writer;
   private IncludeManager includes;
@@ -176,7 +181,7 @@ class ClassReflectionGenerator {
     this.writer = writer;
     this.includes = includes;
 
-    includes.includePath("reflection.h");
+    includes.includePath(REFLECTION_H);
     writer.println("&(TeaVM_ClassReflection) {").indent();
 
     var needComma = false;
@@ -230,8 +235,8 @@ class ClassReflectionGenerator {
         .print(String.valueOf(fields.size()))
         .println("];}) {")
         .indent();
-    writer.print(".count = ").print(String.valueOf(fields.size())).println(",");
-    writer.print(".data = ").println("{").indent();
+    writer.print(COUNT_SUFFIX).print(String.valueOf(fields.size())).println(",");
+    writer.print(DATA_SUFFIX).println("{").indent();
     generateField(cls, fields.get(0));
     for (var i = 1; i < fields.size(); ++i) {
       writer.println(",");
@@ -242,7 +247,7 @@ class ClassReflectionGenerator {
   }
 
   private void generateField(ClassReader cls, FieldReader field) {
-    includes.addInclude("<stddef.h>");
+    includes.addInclude(STDDEF_H);
 
     var names = context.getNames();
     writer.println("{").indent();
@@ -314,8 +319,8 @@ class ClassReflectionGenerator {
         .print(String.valueOf(methods.size()))
         .println("];}) {")
         .indent();
-    writer.print(".count = ").print(String.valueOf(methods.size())).println(",");
-    writer.print(".data = ").println("{").indent();
+    writer.print(COUNT_SUFFIX).print(String.valueOf(methods.size())).println(",");
+    writer.print(DATA_SUFFIX).println("{").indent();
     generateMethod(methods.get(0));
     for (var i = 1; i < methods.size(); ++i) {
       writer.println(",");
@@ -326,7 +331,7 @@ class ClassReflectionGenerator {
   }
 
   private void generateMethod(MethodReader method) {
-    includes.addInclude("<stddef.h>");
+    includes.addInclude(STDDEF_H);
 
     writer.println("{").indent();
 
@@ -350,8 +355,8 @@ class ClassReflectionGenerator {
           .print(String.valueOf(method.parameterCount()))
           .println("];}) {")
           .indent();
-      writer.print(".count = ").print(String.valueOf(method.parameterCount())).println(",");
-      writer.print(".data = ").println("{").indent();
+      writer.print(COUNT_SUFFIX).print(String.valueOf(method.parameterCount())).println(",");
+      writer.print(DATA_SUFFIX).println("{").indent();
       for (var i = 0; i < method.parameterCount(); ++i) {
         if (i > 0) {
           writer.println(",");
@@ -373,8 +378,8 @@ class ClassReflectionGenerator {
             .print(String.valueOf(thrownTypes.size()))
             .println("];}) {")
             .indent();
-        writer.print(".count = ").print(String.valueOf(thrownTypes.size())).println(",");
-        writer.print(".data = ").println("{").indent();
+        writer.print(COUNT_SUFFIX).print(String.valueOf(thrownTypes.size())).println(",");
+        writer.print(DATA_SUFFIX).println("{").indent();
         for (var i = 0; i < thrownTypes.size(); ++i) {
           if (i > 0) {
             writer.println(",");
@@ -506,7 +511,7 @@ class ClassReflectionGenerator {
         if (vtableClass == null) {
           offset = "0";
         } else {
-          includes.addInclude("<stddef.h>");
+          includes.addInclude(STDDEF_H);
           offset =
               "(int16_t) offsetof("
                   + context.getNames().forClassClass(vtableClass)
@@ -562,8 +567,8 @@ class ClassReflectionGenerator {
         .print(String.valueOf(count))
         .println("]; }) {")
         .indent();
-    writer.print(".count = ").print(String.valueOf(count)).println(",");
-    writer.print(".data = ").println("{").indent();
+    writer.print(COUNT_SUFFIX).print(String.valueOf(count)).println(",");
+    writer.print(DATA_SUFFIX).println("{").indent();
     for (var i = 0; i < count; ++i) {
       if (i > 0) {
         writer.println(",");
@@ -607,7 +612,7 @@ class ClassReflectionGenerator {
                 + annotations.size()
                 + "]; }) {")
         .indent();
-    writer.print(".count = ").print(String.valueOf(annotations.size())).println(",");
+    writer.print(COUNT_SUFFIX).print(String.valueOf(annotations.size())).println(",");
     writer.println(".data = {").indent();
     generateAnnotation(annotations.get(0));
     for (var i = 1; i < annotations.size(); ++i) {
@@ -629,7 +634,7 @@ class ClassReflectionGenerator {
     includes.includeClass(ctor.getClassName());
     writer.println("{").indent();
     writer.print(".constructor = &").print(context.getNames().forMethod(ctor)).println(",");
-    writer.print(".data = ");
+    writer.print(DATA_SUFFIX);
     generateAnnotationData(annotation);
     writer.println();
     writer.outdent().print("}");
@@ -739,7 +744,7 @@ class ClassReflectionGenerator {
           writer.print(") &(struct { int32_t count; ");
           ClassGenerator.generateAnnotationFieldType(context, includes, writer, itemType);
           writer.println(" data[" + list.size() + "]; }) {").indent();
-          writer.print(".count = ").print(String.valueOf(list.size())).println(",");
+          writer.print(COUNT_SUFFIX).print(String.valueOf(list.size())).println(",");
           writer.print(".data = {").indent();
           if (!list.isEmpty()) {
             writer.println();
@@ -856,8 +861,8 @@ class ClassReflectionGenerator {
         .print(String.valueOf(innerClasses.size()))
         .println("];}) {")
         .indent();
-    writer.print(".count = ").print(String.valueOf(innerClasses.size())).println(",");
-    writer.print(".data = ").println("{").indent();
+    writer.print(COUNT_SUFFIX).print(String.valueOf(innerClasses.size())).println(",");
+    writer.print(DATA_SUFFIX).println("{").indent();
     for (var i = 0; i < innerClasses.size(); ++i) {
       if (i > 0) {
         writer.println(",");
@@ -885,8 +890,8 @@ class ClassReflectionGenerator {
         .print(String.valueOf(params.length))
         .println("]; }) {")
         .indent();
-    writer.print(".count = ").print(String.valueOf(params.length)).println(",");
-    writer.print(".data = ").println("{").indent();
+    writer.print(COUNT_SUFFIX).print(String.valueOf(params.length)).println(",");
+    writer.print(DATA_SUFFIX).println("{").indent();
     for (var i = 0; i < params.length; ++i) {
       if (i > 0) {
         writer.println(",");
@@ -935,7 +940,7 @@ class ClassReflectionGenerator {
 
   private void generateGenericType(
       GenericValueType type, ClassReader contextClass, MethodReader contextMethod) {
-    includes.includePath("reflection.h");
+    includes.includePath(REFLECTION_H);
     if (type.canBeRepresentedAsRaw()) {
       generateRawType(type.asValueType());
     } else if (type instanceof GenericValueType.Object objectType) {
@@ -1062,7 +1067,7 @@ class ClassReflectionGenerator {
   }
 
   private void generateRawType(ValueType type) {
-    includes.includePath("reflection.h");
+    includes.includePath(REFLECTION_H);
     var degree = 0;
     var current = type;
     while (current instanceof ValueType.Array) {
