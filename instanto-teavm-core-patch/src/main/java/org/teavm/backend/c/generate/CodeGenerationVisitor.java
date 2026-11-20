@@ -27,7 +27,6 @@ import java.nio.ShortBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -113,6 +112,12 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
+  private static final String INT32_T = "int32_t";
+  private static final String INT64_T = "int64_t";
+  private static final String FLOAT_TEXT = "float";
+  private static final String DOUBLE_TEXT = "double";
+  private static final String TEAVM_LABEL = "teavm_label_";
+
   public static final MethodReference ALLOC_METHOD =
       new MethodReference(Allocator.class, "allocate", RuntimeClass.class, Address.class);
   private static final MethodReference ALLOC_ARRAY_METHOD =
@@ -169,10 +174,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     BUFFER_TYPES.put(ByteBuffer.class.getName(), "int8_t");
     BUFFER_TYPES.put(ShortBuffer.class.getName(), "int16_t");
     BUFFER_TYPES.put(CharBuffer.class.getName(), "char16_t");
-    BUFFER_TYPES.put(IntBuffer.class.getName(), "int32_t");
-    BUFFER_TYPES.put(LongBuffer.class.getName(), "int64_t");
-    BUFFER_TYPES.put(FloatBuffer.class.getName(), "float");
-    BUFFER_TYPES.put(DoubleBuffer.class.getName(), "double");
+    BUFFER_TYPES.put(IntBuffer.class.getName(), INT32_T);
+    BUFFER_TYPES.put(LongBuffer.class.getName(), INT64_T);
+    BUFFER_TYPES.put(FloatBuffer.class.getName(), FLOAT_TEXT);
+    BUFFER_TYPES.put(DoubleBuffer.class.getName(), DOUBLE_TEXT);
   }
 
   public CodeGenerationVisitor(
@@ -223,13 +228,13 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
               writer.print("i64");
               break;
             case FLOAT:
-              writer.print("float");
+              writer.print(FLOAT_TEXT);
               if (expr.getOperation() == BinaryOperation.COMPARE_LESS) {
                 writer.print("_less");
               }
               break;
             case DOUBLE:
-              writer.print("double");
+              writer.print(DOUBLE_TEXT);
               if (expr.getOperation() == BinaryOperation.COMPARE_LESS) {
                 writer.print("_less");
               }
@@ -243,7 +248,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
           return;
         case UNSIGNED_RIGHT_SHIFT:
           {
-            String type = expr.getType() == OperationType.LONG ? "int64_t" : "int32_t";
+            String type = expr.getType() == OperationType.LONG ? INT64_T : INT32_T;
             writer.print("((" + type + ") ((u" + type + ") ");
 
             expr.getFirstOperand().acceptVisitor(this);
@@ -479,13 +484,13 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
       case CHAR:
         return "char16_t";
       case INT:
-        return "int32_t";
+        return INT32_T;
       case LONG:
-        return "int64_t";
+        return INT64_T;
       case FLOAT:
-        return "float";
+        return FLOAT_TEXT;
       case DOUBLE:
-        return "double";
+        return DOUBLE_TEXT;
       case OBJECT:
         return "void*";
       default:
@@ -563,9 +568,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     CallSiteLocation[] callSiteLocations =
         CallSiteLocation.fromTextLocation(location, callingMethod);
     CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), callSiteLocations);
-    List<ExceptionHandlerDescriptor> reverseHandlers = new ArrayList<>(handlers);
-    Collections.reverse(reverseHandlers);
-    callSite.getHandlers().addAll(reverseHandlers);
+    callSite.getHandlers().addAll(handlers.reversed());
     callSites.add(callSite);
 
     writer.print("TEAVM_WITH_CALL_SITE_ID(").print(String.valueOf(callSite.getId())).print(", ");
@@ -1160,16 +1163,16 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     writer.print("((");
     switch (expr.getTarget()) {
       case INT:
-        writer.print("int32_t");
+        writer.print(INT32_T);
         break;
       case LONG:
-        writer.print("int64_t");
+        writer.print(INT64_T);
         break;
       case FLOAT:
-        writer.print("float");
+        writer.print(FLOAT_TEXT);
         break;
       case DOUBLE:
-        writer.print("double");
+        writer.print(DOUBLE_TEXT);
         break;
     }
     writer.print(") ");
@@ -1306,7 +1309,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     writer.outdent().println("}");
 
     if (usedAsBreakTarget.contains(statement)) {
-      writer.outdent().println("teavm_label_" + statementId + ":;").indent();
+      writer.outdent().println(TEAVM_LABEL + statementId + ":;").indent();
     }
 
     defaultBreakTarget = oldDefaultBreakTarget;
@@ -1344,7 +1347,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     writer.outdent().println("}");
 
     if (usedAsBreakTarget.contains(statement)) {
-      writer.outdent().println("teavm_label_" + statementId + ":;").indent();
+      writer.outdent().println(TEAVM_LABEL + statementId + ":;").indent();
     }
 
     defaultContinueTarget = oldDefaultContinueTarget;
@@ -1358,7 +1361,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     visitMany(statement.getBody());
 
     if (usedAsBreakTarget.contains(statement)) {
-      writer.outdent().println("teavm_label_" + statementId + ":;").indent();
+      writer.outdent().println(TEAVM_LABEL + statementId + ":;").indent();
     }
   }
 
@@ -1369,7 +1372,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     if (target == null) {
       target = defaultBreakTarget;
     }
-    jumpToTarget(target, "teavm_label_");
+    jumpToTarget(target, TEAVM_LABEL);
     usedAsBreakTarget.add(target);
     popLocation(statement.getLocation());
   }
