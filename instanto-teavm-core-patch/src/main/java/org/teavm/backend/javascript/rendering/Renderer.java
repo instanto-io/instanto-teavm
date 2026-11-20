@@ -70,6 +70,11 @@ import org.teavm.vm.RenderingException;
 import org.teavm.vm.TeaVMProgressFeedback;
 
 public class Renderer implements RenderingManager {
+  private static final String JAVA_LANG_STRING = "java.lang.String";
+  private static final String FUNCTION = "function()";
+  private static final String RETURN = "return ";
+  private static final String JAVA_LANG_OBJECT = "java.lang.Object";
+
   public static final int SECTION_STRING_POOL = 0;
   public static final int SECTION_METADATA = 1;
 
@@ -235,43 +240,43 @@ public class Renderer implements RenderingManager {
 
   private void renderJavaStringToString() {
     writer
-        .appendClass("java.lang.String")
+        .appendClass(JAVA_LANG_STRING)
         .append(".prototype.toString")
         .ws()
         .append("=")
         .ws()
-        .append("function()")
+        .append(FUNCTION)
         .ws()
         .append("{")
         .indent()
         .softNewLine();
-    writer.append("return ").appendFunction("$rt_ustr").append("(this);").softNewLine();
+    writer.append(RETURN).appendFunction("$rt_ustr").append("(this);").softNewLine();
     writer.outdent().append("};").newLine();
     writer
-        .appendClass("java.lang.String")
+        .appendClass(JAVA_LANG_STRING)
         .append(".prototype.valueOf")
         .ws()
         .append("=")
         .ws()
-        .appendClass("java.lang.String")
+        .appendClass(JAVA_LANG_STRING)
         .append(".prototype.toString;")
         .softNewLine();
   }
 
   private void renderJavaObjectToString() {
     writer
-        .appendClass("java.lang.Object")
+        .appendClass(JAVA_LANG_OBJECT)
         .append(".prototype.toString")
         .ws()
         .append("=")
         .ws()
-        .append("function()")
+        .append(FUNCTION)
         .ws()
         .append("{")
         .indent()
         .softNewLine();
     writer
-        .append("return ")
+        .append(RETURN)
         .appendFunction("$rt_ustr")
         .append("(")
         .appendMethod(Object.class, "toString", String.class)
@@ -282,17 +287,17 @@ public class Renderer implements RenderingManager {
 
   private void renderTeaVMClass() {
     writer
-        .appendClass("java.lang.Object")
+        .appendClass(JAVA_LANG_OBJECT)
         .append(".prototype.__teavm_class__")
         .ws()
         .append("=")
         .ws()
-        .append("function()")
+        .append(FUNCTION)
         .ws()
         .append("{")
         .indent()
         .softNewLine();
-    writer.append("return ").appendFunction("$dbg_class").append("(this);").softNewLine();
+    writer.append(RETURN).appendFunction("$dbg_class").append("(this);").softNewLine();
     writer.outdent().append("};").newLine();
   }
 
@@ -357,7 +362,7 @@ public class Renderer implements RenderingManager {
       }
     }
 
-    if (nonStaticFields.isEmpty() && !cls.getName().equals("java.lang.Object")) {
+    if (nonStaticFields.isEmpty() && !cls.getName().equals(JAVA_LANG_OBJECT)) {
       renderShortClassFunctionDeclaration(cls);
     } else {
       renderFullClassFunctionDeclaration(cls, nonStaticFields);
@@ -421,7 +426,7 @@ public class Renderer implements RenderingManager {
       writer.append(";").softNewLine();
     }
 
-    if (cls.getName().equals("java.lang.Object")) {
+    if (cls.getName().equals(JAVA_LANG_OBJECT)) {
       writer.append("this.$id$").ws().append('=').ws().append("0;").softNewLine();
     }
 
@@ -437,7 +442,7 @@ public class Renderer implements RenderingManager {
         .append("(");
     if (cls.hasModifier(ElementModifier.INTERFACE)) {
       writer.append("0");
-    } else if (!cls.getParent().equals("java.lang.Object")) {
+    } else if (!cls.getParent().equals(JAVA_LANG_OBJECT)) {
       writer.appendClass(cls.getParent());
     }
     writer.append(")").endDeclaration();
@@ -919,7 +924,7 @@ public class Renderer implements RenderingManager {
       writer.append(variableNameForInitializer(i));
     }
     writer.append(");").softNewLine();
-    writer.append("return " + instanceName + ";").softNewLine();
+    writer.append(RETURN + instanceName + ";").softNewLine();
     writer.outdent().append("}").endDeclaration();
     writer.emitMethod(null);
   }
@@ -986,7 +991,7 @@ public class Renderer implements RenderingManager {
     }
     writer.append(")").ws().append("{").ws();
     if (method.getDescriptor().getResultType() != ValueType.VOID) {
-      writer.append("return ");
+      writer.append(RETURN);
     }
     writer.appendMethod(method).append("(");
     writer.append("this");
