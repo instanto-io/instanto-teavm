@@ -95,16 +95,13 @@ public class DefaultAliasProvider implements AliasProvider {
 
   @Override
   public ScopedName getStaticMethodAlias(MethodReference method) {
-    String suggested = method.getDescriptor().getName();
-    switch (suggested) {
-      case "<init>":
-        suggested = "_init_";
-        break;
-      case "<clinit>":
-        suggested = "_clinit_";
-        break;
-    }
-
+    String name = method.getDescriptor().getName();
+    String suggested =
+        switch (name) {
+          case "<init>" -> "_init_";
+          case "<clinit>" -> "_clinit_";
+          default -> name;
+        };
     return makeUnique(suggestAliasForClass(method.getClassName()) + "_" + suggested);
   }
 
