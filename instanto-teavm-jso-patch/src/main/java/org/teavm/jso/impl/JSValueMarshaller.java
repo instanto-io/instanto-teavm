@@ -411,35 +411,17 @@ class JSValueMarshaller {
   }
 
   private JSBufferType resolveBufferType(String className, JSBufferType type) {
-    if (type == null) {
-      switch (className) {
-        case "java.nio.ByteBuffer":
-          type = JSBufferType.INT8;
-          break;
-        case "java.nio.CharBuffer":
-          type = JSBufferType.UINT16;
-          break;
-        case "java.nio.ShortBuffer":
-          type = JSBufferType.INT16;
-          break;
-        case "java.nio.IntBuffer":
-          type = JSBufferType.INT32;
-          break;
-        case "java.nio.LongBuffer":
-          type = JSBufferType.INT64;
-          break;
-        case "java.nio.FloatBuffer":
-          type = JSBufferType.FLOAT32;
-          break;
-        case "java.nio.DoubleBuffer":
-          type = JSBufferType.FLOAT64;
-          break;
-      }
-    }
-    if (type == null) {
-      type = JSBufferType.DATA_VIEW;
-    }
-    return type;
+    if (type != null) return type;
+    return switch (className) {
+      case "java.nio.ByteBuffer" -> JSBufferType.INT8;
+      case "java.nio.CharBuffer" -> JSBufferType.UINT16;
+      case "java.nio.ShortBuffer" -> JSBufferType.INT16;
+      case "java.nio.IntBuffer" -> JSBufferType.INT32;
+      case "java.nio.LongBuffer" -> JSBufferType.INT64;
+      case "java.nio.FloatBuffer" -> JSBufferType.FLOAT32;
+      case "java.nio.DoubleBuffer" -> JSBufferType.FLOAT64;
+      default -> JSBufferType.DATA_VIEW;
+    };
   }
 
   private ValueType getWrappedType(ValueType type) {
