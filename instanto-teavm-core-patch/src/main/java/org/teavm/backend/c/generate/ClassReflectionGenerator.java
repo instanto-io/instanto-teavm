@@ -716,52 +716,55 @@ class ClassReflectionGenerator {
         writeType(value.getJavaClass());
         break;
       case AnnotationValue.ENUM:
-        {
-          var enumCls = context.getClassSource().get(value.getEnumValue().getClassName());
-          if (enumCls == null) {
-            writer.print("NULL");
-            break;
-          }
-          var index = 0;
-          for (var field : enumCls.getFields()) {
-            if (field.hasModifier(ElementModifier.ENUM)) {
-              if (field.getName().equals(value.getEnumValue().getFieldName())) {
-                break;
-              }
-              ++index;
-            }
-          }
-          writer.print(String.valueOf(index));
-          break;
-        }
+        generateEnumValue(value);
+        break;
       case AnnotationValue.ANNOTATION:
         generateAnnotationData(value.getAnnotation());
         break;
       case AnnotationValue.LIST:
-        {
-          var itemType = ((ValueType.Array) type).getItemType();
-          var list = value.getList();
-          writer.print("(");
-          ClassGenerator.generateAnnotationFieldType(context, includes, writer, type);
-          writer.print(") &(struct { int32_t count; ");
-          ClassGenerator.generateAnnotationFieldType(context, includes, writer, itemType);
-          writer.println(" data[" + list.size() + SPACED_STRUCT_ARRAY_INITIALIZER).indent();
-          writer.print(COUNT_SUFFIX).print(String.valueOf(list.size())).println(",");
-          writer.print(".data = {").indent();
-          if (!list.isEmpty()) {
-            writer.println();
-            generateAnnotationValue(itemType, list.get(0));
-            for (var i = 1; i < list.size(); ++i) {
-              writer.println(",");
-              generateAnnotationValue(itemType, list.get(i));
-            }
-            writer.println();
-          }
-          writer.outdent().println("}");
-          writer.outdent().print("}");
-          break;
-        }
+        generateAnnotationArray(type, value.getList());
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported annotation value type: " + value.getType());
     }
+  }
+
+  private void generateEnumValue(AnnotationValue value) {
+    var enumValue = value.getEnumValue();
+    var enumClass = context.getClassSource().get(enumValue.getClassName());
+    if (enumClass == null) {
+      writer.print("NULL");
+      return;
+    }
+    int index = 0;
+    for (var field : enumClass.getFields()) {
+      if (!field.hasModifier(ElementModifier.ENUM)) continue;
+      if (field.getName().equals(enumValue.getFieldName())) break;
+      index++;
+    }
+    writer.print(String.valueOf(index));
+  }
+
+  private void generateAnnotationArray(ValueType type, List<AnnotationValue> list) {
+    var itemType = ((ValueType.Array) type).getItemType();
+    writer.print("(");
+    ClassGenerator.generateAnnotationFieldType(context, includes, writer, type);
+    writer.print(") &(struct { int32_t count; ");
+    ClassGenerator.generateAnnotationFieldType(context, includes, writer, itemType);
+    writer.println(" data[" + list.size() + SPACED_STRUCT_ARRAY_INITIALIZER).indent();
+    writer.print(COUNT_SUFFIX).print(String.valueOf(list.size())).println(",");
+    writer.print(".data = {").indent();
+    if (!list.isEmpty()) {
+      writer.println();
+      generateAnnotationValue(itemType, list.get(0));
+      for (var i = 1; i < list.size(); i++) {
+        writer.println(",");
+        generateAnnotationValue(itemType, list.get(i));
+      }
+      writer.println();
+    }
+    writer.outdent().println("}");
+    writer.outdent().print("}");
   }
 
   private void writeType(ValueType cls) {
