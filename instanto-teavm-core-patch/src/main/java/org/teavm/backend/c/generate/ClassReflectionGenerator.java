@@ -50,6 +50,7 @@ class ClassReflectionGenerator {
   private static final String COUNT_SUFFIX = ".count = ";
   private static final String DATA_SUFFIX = ".data = ";
   private static final String STDDEF_H = "<stddef.h>";
+  private static final String STRUCT_ARRAY_INITIALIZER = "];}) {";
 
   private GenerationContext context;
   private CodeWriter writer;
@@ -233,7 +234,7 @@ class ClassReflectionGenerator {
     writer
         .print("(TeaVM_FieldInfoList*) &(struct { int32_t count; TeaVM_FieldInfo data[")
         .print(String.valueOf(fields.size()))
-        .println("];}) {")
+        .println(STRUCT_ARRAY_INITIALIZER)
         .indent();
     writer.print(COUNT_SUFFIX).print(String.valueOf(fields.size())).println(",");
     writer.print(DATA_SUFFIX).println("{").indent();
@@ -317,7 +318,7 @@ class ClassReflectionGenerator {
     writer
         .print("(TeaVM_MethodInfoList*) &(struct { int32_t count; TeaVM_MethodInfo data[")
         .print(String.valueOf(methods.size()))
-        .println("];}) {")
+        .println(STRUCT_ARRAY_INITIALIZER)
         .indent();
     writer.print(COUNT_SUFFIX).print(String.valueOf(methods.size())).println(",");
     writer.print(DATA_SUFFIX).println("{").indent();
@@ -353,7 +354,7 @@ class ClassReflectionGenerator {
       writer
           .print("(TeaVM_ClassPtrList*) &(struct { int32_t count; TeaVM_ClassPtr data[")
           .print(String.valueOf(method.parameterCount()))
-          .println("];}) {")
+          .println(STRUCT_ARRAY_INITIALIZER)
           .indent();
       writer.print(COUNT_SUFFIX).print(String.valueOf(method.parameterCount())).println(",");
       writer.print(DATA_SUFFIX).println("{").indent();
@@ -376,7 +377,7 @@ class ClassReflectionGenerator {
         writer
             .print("(TeaVM_ClassRefList*) &(struct { int32_t count; TeaVM_Class* data[")
             .print(String.valueOf(thrownTypes.size()))
-            .println("];}) {")
+            .println(STRUCT_ARRAY_INITIALIZER)
             .indent();
         writer.print(COUNT_SUFFIX).print(String.valueOf(thrownTypes.size())).println(",");
         writer.print(DATA_SUFFIX).println("{").indent();
@@ -859,7 +860,7 @@ class ClassReflectionGenerator {
     writer
         .print("(TeaVM_ClassRefList*) &(struct { int32_t count; TeaVM_Class* data[")
         .print(String.valueOf(innerClasses.size()))
-        .println("];}) {")
+        .println(STRUCT_ARRAY_INITIALIZER)
         .indent();
     writer.print(COUNT_SUFFIX).print(String.valueOf(innerClasses.size())).println(",");
     writer.print(DATA_SUFFIX).println("{").indent();
