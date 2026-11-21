@@ -131,7 +131,9 @@ public class DefaultAliasProvider implements AliasProvider {
   }
 
   @Override
-  public void reserveName(String name) {}
+  public void reserveName(String name) {
+    // The minifying alias provider handles explicit name reservations.
+  }
 
   private ScopedName makeUnique(String suggested) {
     suggested = sanitize(suggested);
