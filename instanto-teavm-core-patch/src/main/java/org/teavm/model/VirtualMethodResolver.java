@@ -37,10 +37,15 @@ public final class VirtualMethodResolver {
       }
       interfaces.addAll(cls.getInterfaces());
     }
+    return resolveInterfaceDefault(source, interfaces, reference.getDescriptor());
+  }
+
+  private static MethodReader resolveInterfaceDefault(
+      ClassReaderSource source, Set<String> interfaces, MethodDescriptor descriptor) {
     Set<MethodReader> defaults = new LinkedHashSet<>();
     Set<String> visited = new HashSet<>();
     for (String iface : interfaces) {
-      collectInterfaceMethods(source, iface, reference.getDescriptor(), visited, defaults);
+      collectInterfaceMethods(source, iface, descriptor, visited, defaults);
     }
     defaults.removeIf(
         a ->
