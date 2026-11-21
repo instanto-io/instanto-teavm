@@ -813,6 +813,21 @@ public class Renderer implements RenderingManager {
 
   private void collectMethodsToCopyFromInterfaces(
       ClassReader cls, Map<MethodDescriptor, MethodReference> target) {
+    Set<MethodDescriptor> implementedMethods = collectImplementedMethods(cls);
+    Set<String> visitedClasses = new HashSet<>();
+    ClassReader superclass = cls;
+    while (superclass != null) {
+      for (String ifaceName : superclass.getInterfaces()) {
+        ClassReader iface = classSource.get(ifaceName);
+        if (iface != null) {
+          collectMethodsToCopyFromInterfacesImpl(iface, target, implementedMethods, visitedClasses);
+        }
+      }
+      superclass = superclass.getParent() != null ? classSource.get(superclass.getParent()) : null;
+    }
+  }
+
+  private Set<MethodDescriptor> collectImplementedMethods(ClassReader cls) {
     Set<MethodDescriptor> implementedMethods = new HashSet<>();
     ClassReader superclass = cls;
     while (superclass != null) {
@@ -826,18 +841,7 @@ public class Renderer implements RenderingManager {
       }
       superclass = superclass.getParent() != null ? classSource.get(superclass.getParent()) : null;
     }
-
-    Set<String> visitedClasses = new HashSet<>();
-    superclass = cls;
-    while (superclass != null) {
-      for (String ifaceName : superclass.getInterfaces()) {
-        ClassReader iface = classSource.get(ifaceName);
-        if (iface != null) {
-          collectMethodsToCopyFromInterfacesImpl(iface, target, implementedMethods, visitedClasses);
-        }
-      }
-      superclass = superclass.getParent() != null ? classSource.get(superclass.getParent()) : null;
-    }
+    return implementedMethods;
   }
 
   private void collectMethodsToCopyFromInterfacesImpl(
