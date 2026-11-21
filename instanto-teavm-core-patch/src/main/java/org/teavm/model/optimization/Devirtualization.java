@@ -246,19 +246,20 @@ public class Devirtualization {
       if (!isSuperclass.test(ValueType.object(className), false)) {
         continue;
       }
-      ClassReader cls = hierarchy.getClassSource().get(className);
-      if (cls == null) {
-        continue;
-      }
-      var implementation =
-          VirtualMethodResolver.resolve(hierarchy.getClassSource(), className, ref);
-      MethodDependencyInfo methodDep =
-          implementation != null ? dependency.getMethod(implementation.getReference()) : null;
+      MethodDependencyInfo methodDep = resolveImplementation(hierarchy, dependency, className, ref);
       if (methodDep != null) {
         methods.add(methodDep.getReference());
       }
     }
     return methods;
+  }
+
+  private static MethodDependencyInfo resolveImplementation(
+      ClassHierarchy hierarchy, DependencyInfo dependency, String className, MethodReference ref) {
+    var classSource = hierarchy.getClassSource();
+    if (classSource.get(className) == null) return null;
+    var implementation = VirtualMethodResolver.resolve(classSource, className, ref);
+    return implementation == null ? null : dependency.getMethod(implementation.getReference());
   }
 
   public Set<? extends MethodReference> getVirtualMethods() {
