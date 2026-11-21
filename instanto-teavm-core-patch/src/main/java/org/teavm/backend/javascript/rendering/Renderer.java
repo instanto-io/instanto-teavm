@@ -230,7 +230,9 @@ public class Renderer implements RenderingManager {
     }
   }
 
-  public void renderReflection() {}
+  public void renderReflection() {
+    // Retained for compatibility; this renderer emits no separate reflection section.
+  }
 
   public void renderCompatibilityStubs() throws RenderingException {
     renderJavaStringToString();
