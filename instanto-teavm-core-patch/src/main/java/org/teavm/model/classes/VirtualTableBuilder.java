@@ -493,15 +493,7 @@ public class VirtualTableBuilder {
 
   private void propagateInterfaceIndexes(ClassReader cls, MethodDescriptor method, int index) {
     while (true) {
-      for (String itf : cls.getInterfaces()) {
-        TableBuilder itfTable = tables.get(itf);
-        if (itfTable != null) {
-          EntryBuilder itfEntry = itfTable.entries.get(method);
-          if (itfEntry != null) {
-            propagateInterfaceIndex(itfEntry, index);
-          }
-        }
-      }
+      propagateDirectInterfaceIndexes(cls, method, index);
 
       if (cls.getParent() == null) {
         break;
@@ -516,6 +508,15 @@ public class VirtualTableBuilder {
       if (entry == null || entry.implementor != null) {
         break;
       }
+    }
+  }
+
+  private void propagateDirectInterfaceIndexes(ClassReader cls, MethodDescriptor method, int index) {
+    for (String itf : cls.getInterfaces()) {
+      TableBuilder table = tables.get(itf);
+      if (table == null) continue;
+      EntryBuilder entry = table.entries.get(method);
+      if (entry != null) propagateInterfaceIndex(entry, index);
     }
   }
 
