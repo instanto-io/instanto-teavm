@@ -50,6 +50,7 @@ class ClassReflectionGenerator {
   private static final String COUNT_SUFFIX = ".count = ";
   private static final String DATA_SUFFIX = ".data = ";
   private static final String STDDEF_H = "<stddef.h>";
+  private static final String SPACED_STRUCT_ARRAY_INITIALIZER = "]; }) {";
   private static final String STRUCT_ARRAY_INITIALIZER = "];}) {";
 
   private GenerationContext context;
@@ -566,7 +567,7 @@ class ClassReflectionGenerator {
     writer
         .print("(TeaVM_ParameterInfoList*) &(struct { int32_t count; TeaVM_ParameterInfo data[")
         .print(String.valueOf(count))
-        .println("]; }) {")
+        .println(SPACED_STRUCT_ARRAY_INITIALIZER)
         .indent();
     writer.print(COUNT_SUFFIX).print(String.valueOf(count)).println(",");
     writer.print(DATA_SUFFIX).println("{").indent();
@@ -611,7 +612,7 @@ class ClassReflectionGenerator {
             "(TeaVM_AnnotationInfoList*) &(struct { int32_t count; "
                 + "TeaVM_AnnotationInfo data["
                 + annotations.size()
-                + "]; }) {")
+                + SPACED_STRUCT_ARRAY_INITIALIZER)
         .indent();
     writer.print(COUNT_SUFFIX).print(String.valueOf(annotations.size())).println(",");
     writer.println(".data = {").indent();
@@ -744,7 +745,7 @@ class ClassReflectionGenerator {
           ClassGenerator.generateAnnotationFieldType(context, includes, writer, type);
           writer.print(") &(struct { int32_t count; ");
           ClassGenerator.generateAnnotationFieldType(context, includes, writer, itemType);
-          writer.println(" data[" + list.size() + "]; }) {").indent();
+          writer.println(" data[" + list.size() + SPACED_STRUCT_ARRAY_INITIALIZER).indent();
           writer.print(COUNT_SUFFIX).print(String.valueOf(list.size())).println(",");
           writer.print(".data = {").indent();
           if (!list.isEmpty()) {
@@ -889,7 +890,7 @@ class ClassReflectionGenerator {
         .print(
             "(TeaVM_TypeVariableInfoList*) &(struct { int32_t count; TeaVM_TypeVariableInfo data[")
         .print(String.valueOf(params.length))
-        .println("]; }) {")
+        .println(SPACED_STRUCT_ARRAY_INITIALIZER)
         .indent();
     writer.print(COUNT_SUFFIX).print(String.valueOf(params.length)).println(",");
     writer.print(DATA_SUFFIX).println("{").indent();
