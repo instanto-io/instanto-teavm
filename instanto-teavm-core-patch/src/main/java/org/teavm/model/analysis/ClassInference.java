@@ -397,11 +397,7 @@ public class ClassInference {
     int pathSize = 0;
     IntStack stack = new IntStack();
 
-    for (int i = 0; i < graph.size(); ++i) {
-      if (graph.incomingEdgesCount(i) == 0 && (overflowTypes[i] || types[i] != null)) {
-        stack.push(i);
-      }
-    }
+    pushPropagationRoots(stack);
 
     while (!stack.isEmpty()) {
       int node = stack.pop();
@@ -423,6 +419,14 @@ public class ClassInference {
     }
 
     propagationPath = Arrays.copyOf(path, pathSize);
+  }
+
+  private void pushPropagationRoots(IntStack stack) {
+    for (int i = 0; i < graph.size(); ++i) {
+      if (graph.incomingEdgesCount(i) == 0 && (overflowTypes[i] || types[i] != null)) {
+        stack.push(i);
+      }
+    }
   }
 
   private void propagate(Program program) {
