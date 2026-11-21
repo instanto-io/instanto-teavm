@@ -590,24 +590,30 @@ class ClassReflectionGenerator {
           paramGenericType = pt;
         }
       }
-      if (annots.isEmpty() && paramGenericType == null) {
-        writer.print("{ 0 }");
-        continue;
-      }
-      writer.print("{");
-      if (!annots.isEmpty()) {
-        writer.print(" .annotations = ");
-        generateAnnotations(annots);
-      }
-      if (paramGenericType != null) {
-        writer.print(" .genericType = ");
-        generateGenericType(paramGenericType, contextClass, method);
-      }
-      writer.print(" }");
+      generateParameterInfo(annots, paramGenericType, contextClass, method);
     }
     writer.println();
     writer.outdent().println("}");
     writer.outdent().print("}");
+  }
+
+  private void generateParameterInfo(
+      List<AnnotationReader> annotations, GenericValueType genericType,
+      ClassReader contextClass, MethodReader method) {
+    if (annotations.isEmpty() && genericType == null) {
+      writer.print("{ 0 }");
+      return;
+    }
+    writer.print("{");
+    if (!annotations.isEmpty()) {
+      writer.print(" .annotations = ");
+      generateAnnotations(annotations);
+    }
+    if (genericType != null) {
+      writer.print(" .genericType = ");
+      generateGenericType(genericType, contextClass, method);
+    }
+    writer.print(" }");
   }
 
   private void generateAnnotations(List<AnnotationReader> annotations) {
