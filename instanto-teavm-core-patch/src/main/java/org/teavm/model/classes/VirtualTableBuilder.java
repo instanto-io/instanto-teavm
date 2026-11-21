@@ -311,24 +311,30 @@ public class VirtualTableBuilder {
 
       TableBuilder table = tables.get(className);
       TableBuilder parentTable = cls.getParent() != null ? tables.get(cls.getParent()) : null;
-      for (MethodDescriptor method : table.entries.keySet()) {
-        EntryBuilder entry = table.entries.get(method);
-        if (entry.implementor == null) {
-          continue;
-        }
-        if (parentTable != null) {
-          EntryBuilder parentEntry = parentTable.entries.get(method);
-          if (parentEntry != null && entry.implementor.equals(parentEntry.implementor)) {
-            continue;
-          }
-        }
-
-        groups.computeIfAbsent(method, k -> new ArrayList<>()).add(className);
-      }
+      addOwnMethodEntries(groups, className, table, parentTable);
     }
 
     groups.entrySet().removeIf(entry -> entry.getValue().size() == 1);
     return groups;
+  }
+
+  private static void addOwnMethodEntries(
+      Map<MethodDescriptor, List<String>> groups, String className,
+      TableBuilder table, TableBuilder parentTable) {
+    for (MethodDescriptor method : table.entries.keySet()) {
+      EntryBuilder entry = table.entries.get(method);
+      if (entry.implementor == null) {
+        continue;
+      }
+      if (parentTable != null) {
+        EntryBuilder parentEntry = parentTable.entries.get(method);
+        if (parentEntry != null && entry.implementor.equals(parentEntry.implementor)) {
+          continue;
+        }
+      }
+
+      groups.computeIfAbsent(method, k -> new ArrayList<>()).add(className);
+    }
   }
 
   private void liftEntriesAtTable(
