@@ -519,20 +519,7 @@ public class ClassGenerator {
       headerWriter.print("typedef struct ").print(name).println(" {").indent();
     }
 
-    if (cls.getParent() == null || !cls.getParent().equals(Structure.class.getName())) {
-      String parentName = cls.getParent();
-      if (parentName == null) {
-        parentName = RuntimeObject.class.getName();
-      }
-      if (writeNeeded) {
-        headerIncludes.includeClass(parentName);
-        headerWriter
-            .print("struct ")
-            .print(context.getNames().forClass(parentName))
-            .println(" parent;");
-      }
-      includes.includeClass(parentName);
-    }
+    writeParentStructure(cls, writeNeeded);
 
     FieldReference[] instanceFields = new FieldReference[cls.getFields().size()];
     int instanceIndex = 0;
@@ -556,6 +543,23 @@ public class ClassGenerator {
 
     if (writeNeeded) {
       headerWriter.outdent().print("} ").print(name).println(";");
+    }
+  }
+
+  private void writeParentStructure(ClassHolder cls, boolean writeNeeded) {
+    if (cls.getParent() == null || !cls.getParent().equals(Structure.class.getName())) {
+      String parentName = cls.getParent();
+      if (parentName == null) {
+        parentName = RuntimeObject.class.getName();
+      }
+      if (writeNeeded) {
+        headerIncludes.includeClass(parentName);
+        headerWriter
+            .print("struct ")
+            .print(context.getNames().forClass(parentName))
+            .println(" parent;");
+      }
+      includes.includeClass(parentName);
     }
   }
 
