@@ -1041,35 +1041,36 @@ class ClassReflectionGenerator {
 
   private void generateTypeVariableRef(
       String varName, ClassReader contextClass, MethodReader contextMethod) {
-    var level = 0;
+    int level = 0;
     if (contextMethod != null) {
-      var params = contextMethod.getTypeParameters();
-      for (var i = 0; i < params.length; ++i) {
-        if (params[i].getName().equals(varName)) {
-          writeTypeVariableRef(0, i);
-          return;
-        }
+      int index = typeVariableIndex(contextMethod.getTypeParameters(), varName);
+      if (index >= 0) {
+        writeTypeVariableRef(0, index);
+        return;
       }
-      ++level;
+      level++;
     }
     var currentClass = contextClass;
     while (currentClass != null) {
-      var params = currentClass.getGenericParameters();
-      if (params != null) {
-        for (var i = 0; i < params.length; ++i) {
-          if (params[i].getName().equals(varName)) {
-            writeTypeVariableRef(level, i);
-            return;
-          }
-        }
+      int index = typeVariableIndex(currentClass.getGenericParameters(), varName);
+      if (index >= 0) {
+        writeTypeVariableRef(level, index);
+        return;
       }
-      ++level;
-      if (currentClass.getOwnerName() == null) {
-        break;
-      }
-      currentClass = context.getClassSource().get(currentClass.getOwnerName());
+      level++;
+      String ownerName = currentClass.getOwnerName();
+      if (ownerName == null) break;
+      currentClass = context.getClassSource().get(ownerName);
     }
     throw new IllegalArgumentException("Unknown type variable: " + varName);
+  }
+
+  private static int typeVariableIndex(GenericTypeParameter[] parameters, String name) {
+    if (parameters == null) return -1;
+    for (int i = 0; i < parameters.length; i++) {
+      if (parameters[i].getName().equals(name)) return i;
+    }
+    return -1;
   }
 
   private void writeTypeVariableRef(int level, int index) {
