@@ -824,29 +824,34 @@ public class ClassGenerator {
         continue;
       }
 
-      if (!initMethod) {
-        codeWriter.println(",");
-      }
-      String methodName = context.getNames().forVirtualMethod(method);
-      String implName = "&" + context.getNames().forMethod(entry.getImplementor());
-      includes.includeClass(entry.getImplementor().getClassName());
-
-      if (initMethod) {
-        initWriter
-            .print("vt_")
-            .print(String.valueOf(depth))
-            .print("->")
-            .print(methodName)
-            .print(" = ")
-            .print(implName)
-            .println(";");
-      } else {
-        codeWriter.print(".").print(methodName).print(" = ").print(implName);
-      }
+      writeVirtualTableEntry(method, entry, initMethod, depth);
     }
 
     if (!initMethod) {
       codeWriter.println();
+    }
+  }
+
+  private void writeVirtualTableEntry(
+      MethodDescriptor method, VirtualTableEntry entry, boolean initMethod, int depth) {
+    if (!initMethod) {
+      codeWriter.println(",");
+    }
+    String methodName = context.getNames().forVirtualMethod(method);
+    String implName = "&" + context.getNames().forMethod(entry.getImplementor());
+    includes.includeClass(entry.getImplementor().getClassName());
+
+    if (initMethod) {
+      initWriter
+          .print("vt_")
+          .print(String.valueOf(depth))
+          .print("->")
+          .print(methodName)
+          .print(" = ")
+          .print(implName)
+          .println(";");
+    } else {
+      codeWriter.print(".").print(methodName).print(" = ").print(implName);
     }
   }
 
