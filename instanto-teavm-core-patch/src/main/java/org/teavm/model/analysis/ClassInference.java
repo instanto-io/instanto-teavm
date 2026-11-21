@@ -692,62 +692,47 @@ public class ClassInference {
   private void propagateException(String thrownTypeName, BasicBlock block) {
     for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
       String expectedType = tryCatch.getExceptionType();
-      if (expectedType == null || hierarchy.isSuperType(expectedType, thrownTypeName, false)) {
-        if (tryCatch.getHandler().getExceptionVariable() == null) {
-          break;
-        }
-        int exceptionNode =
-            packNodeAndDegree(tryCatch.getHandler().getExceptionVariable().getIndex(), 0);
-        exceptionNode = nodeMapping[exceptionNode];
-        if (!overflowTypes[exceptionNode]) {
-          int thrownType = getTypeByValueType(ValueType.object(thrownTypeName));
-          IntHashSet nodeTypes = getNodeTypes(exceptionNode);
-          if (nodeTypes.add(thrownType)) {
-            nodeChanged[exceptionNode] = true;
-            changed = true;
-            if (nodeTypes.size() > overflowLimit) {
-              types[exceptionNode] = null;
-              overflowTypes[exceptionNode] = true;
-            }
-          }
-        }
-
-        break;
+      if (expectedType != null && !hierarchy.isSuperType(expectedType, thrownTypeName, false)) {
+        continue;
       }
+      Variable variable = tryCatch.getHandler().getExceptionVariable();
+      if (variable == null) return;
+      int node = nodeMapping[packNodeAndDegree(variable.getIndex(), 0)];
+      if (!overflowTypes[node]) {
+        int thrownType = getTypeByValueType(ValueType.object(thrownTypeName));
+        addExceptionType(node, getNodeTypes(node), thrownType);
+      }
+      return;
     }
   }
 
   private void propagateOverflowException(BasicBlock block) {
     for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-      Variable exceptionVar = tryCatch.getHandler().getExceptionVariable();
-      if (exceptionVar == null) {
-        continue;
-      }
+      Variable variable = tryCatch.getHandler().getExceptionVariable();
+      if (variable == null) continue;
 
-      int exceptionNode = packNodeAndDegree(exceptionVar.getIndex(), 0);
-      exceptionNode = nodeMapping[exceptionNode];
-      if (overflowTypes[exceptionNode]) {
-        continue;
-      }
+      int node = nodeMapping[packNodeAndDegree(variable.getIndex(), 0)];
+      if (overflowTypes[node]) continue;
 
       String expectedType = tryCatch.getExceptionType();
       List<? extends String> thrownTypes = subclassListProvider.getSubclasses(expectedType, false);
-      if (thrownTypes != null) {
-        IntHashSet nodeTypes = getNodeTypes(exceptionNode);
-        for (String thrownTypeName : thrownTypes) {
-          int thrownType = getTypeByValueType(ValueType.object(thrownTypeName));
-          if (nodeTypes.add(thrownType)) {
-            nodeChanged[exceptionNode] = true;
-            changed = true;
-            if (nodeTypes.size() > overflowLimit) {
-              types[exceptionNode] = null;
-              overflowTypes[exceptionNode] = true;
-              break;
-            }
-          }
-        }
+      if (thrownTypes == null) continue;
+      IntHashSet nodeTypes = getNodeTypes(node);
+      for (String thrownTypeName : thrownTypes) {
+        int thrownType = getTypeByValueType(ValueType.object(thrownTypeName));
+        if (addExceptionType(node, nodeTypes, thrownType)) break;
       }
     }
+  }
+
+  private boolean addExceptionType(int node, IntHashSet nodeTypes, int thrownType) {
+    if (!nodeTypes.add(thrownType)) return false;
+    nodeChanged[node] = true;
+    changed = true;
+    if (nodeTypes.size() <= overflowLimit) return false;
+    types[node] = null;
+    overflowTypes[node] = true;
+    return true;
   }
 
   IntHashSet getNodeTypes(int node) {
