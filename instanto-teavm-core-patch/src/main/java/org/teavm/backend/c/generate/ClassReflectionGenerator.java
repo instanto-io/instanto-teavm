@@ -263,6 +263,28 @@ class ClassReflectionGenerator {
     var modifiers = ElementModifier.asModifiersInfo(field.readModifiers(), field.getLevel());
     writer.print(".modifiers = ").print(String.valueOf(modifiers)).println(",");
 
+    generateFieldReflection(field);
+
+    writer.print(".type = ");
+    writeType(field.getType());
+    writer.println(",");
+
+    writer.print(".location = { ");
+    if (field.hasModifier(ElementModifier.STATIC)) {
+      writer.print(".memory = &").print(names.forStaticField(field.getReference()));
+    } else {
+      writer
+          .print(".instance = (int16_t) offsetof(")
+          .print(names.forClass(cls.getName()))
+          .print(", ")
+          .print(names.forMemberField(field.getReference()))
+          .print(")");
+    }
+    writer.println(" }");
+    writer.outdent().print("}");
+  }
+
+  private void generateFieldReflection(FieldReader field) {
     var fieldAnnotations =
         needFieldAnnotations
             ? AnnotationGenerationHelper.collectRuntimeAnnotations(
@@ -295,24 +317,6 @@ class ClassReflectionGenerator {
       }
       writer.println(" },");
     }
-
-    writer.print(".type = ");
-    writeType(field.getType());
-    writer.println(",");
-
-    writer.print(".location = { ");
-    if (field.hasModifier(ElementModifier.STATIC)) {
-      writer.print(".memory = &").print(names.forStaticField(field.getReference()));
-    } else {
-      writer
-          .print(".instance = (int16_t) offsetof(")
-          .print(names.forClass(cls.getName()))
-          .print(", ")
-          .print(names.forMemberField(field.getReference()))
-          .print(")");
-    }
-    writer.println(" }");
-    writer.outdent().print("}");
   }
 
   private void generateMethods(List<MethodReader> methods) {
