@@ -33,6 +33,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.VirtualMethodResolver;
 
@@ -419,23 +420,26 @@ class WasmGCVirtualTableBuilder {
       fillFromInterfaces(superItf, table);
     }
     for (var method : cls.getMethods()) {
-      if (!method.hasModifier(ElementModifier.STATIC)
-          && !method.hasModifier(ElementModifier.ABSTRACT)
-          && method.getLevel() != AccessLevel.PRIVATE) {
-        if (table.currentImplementors.get(method.getDescriptor()) != null
-            && !table.implementorsFromInterfaces.contains(method.getDescriptor())) {
-          continue;
-        }
-        if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
-          continue;
-        }
-        if (!isVirtual.test(method.getReference())) {
-          continue;
-        }
-        table.currentImplementors.put(method.getDescriptor(), method.getReference());
-        table.implementorsFromInterfaces.add(method.getDescriptor());
-      }
+      addInterfaceImplementor(table, method);
     }
+  }
+
+  private void addInterfaceImplementor(Table table, MethodReader method) {
+    if (method.hasModifier(ElementModifier.STATIC)
+        || method.hasModifier(ElementModifier.ABSTRACT)
+        || method.getLevel() == AccessLevel.PRIVATE) {
+      return;
+    }
+    MethodDescriptor descriptor = method.getDescriptor();
+    if (table.currentImplementors.get(descriptor) != null
+        && !table.implementorsFromInterfaces.contains(descriptor)) {
+      return;
+    }
+    if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) return;
+    if (!isVirtual.test(method.getReference())) return;
+
+    table.currentImplementors.put(descriptor, method.getReference());
+    table.implementorsFromInterfaces.add(descriptor);
   }
 
   private void buildResult() {
